@@ -1,0 +1,138 @@
+# API Collection
+## Learner Authentication APIs
+
+Portal routes are defined in [portal/urls.py](/home/gresham/projects/education_center/portal/urls.py:4).
+
+- `POST /portal/validate-signup-data`
+- `POST /portal/submit-learner-registration`
+- `POST /portal/authenticate`
+- `POST /portal/request-otp`
+- `POST /portal/validate-otp`
+- `POST /portal/verify-signup-otp`
+
+### Active Learner Flow
+
+- Validate signup data: `POST /portal/validate-signup-data`
+- Create learner account: `POST /portal/submit-learner-registration`
+- Login with email/password: `POST /portal/authenticate`
+
+### Sample Learner Login Request
+
+```json
+{
+  "email": "learner@example.com",
+  "password": "YourPassword123"
+}
+```
+
+### Sample Learner Signup Request
+
+```json
+{
+  "stage_1": {
+    "first_name": "John",
+    "last_name": "Doe",
+    "email": "learner@example.com",
+    "contact_no": "097xxxxxxx",
+    "password": "YourPassword123",
+    "password_confirmation": "YourPassword123"
+  }
+}
+```
+## CRUD Pattern
+
+Training hub CRUD is done through the shared `/api/*` endpoints using the Django model name in the payload.
+
+### Create
+
+```http
+POST /api/post-data/
+```
+
+```json
+{
+  "model": "Course",
+  "body": {
+    "name": "Python Basics",
+    "description": "Intro course"
+  }
+}
+```
+
+### Read List
+
+```http
+GET /api/get-data/?model=Course
+```
+
+### Read Single Record
+
+```http
+GET /api/get-data/?model=Course&name=Python%20Basics
+```
+
+### Update
+
+```http
+PATCH /api/patch-data/
+```
+
+```json
+{
+  "model": "Course",
+  "body": {
+    "name": "Python Basics",
+    "description": "Updated description"
+  }
+}
+```
+
+### Delete
+
+```http
+DELETE /api/delete-doc/
+```
+
+```json
+{
+  "model": "Course",
+  "body": {
+    "name": "Python Basics"
+  }
+}
+```
+
+### Workflow or Docstatus Operations
+
+- Submit: `PUT /api/submit-doc/`
+- Cancel: `PUT /api/cancel-doc/`
+
+## ZETRC Training Hub Models
+
+Training hub page routes are defined in [client_app/zetrc_training_hub/urls.py](/home/gresham/projects/education_center/client_app/zetrc_training_hub/urls.py:3).
+
+### Pages
+
+- `/app/zetrc_training_hub/zetrc_training_hub_dashboard/`
+- `/app/zetrc_training_hub/lead/`
+- `/app/zetrc_training_hub/inquiry/`
+- `/app/zetrc_training_hub/proposal_request/`
+- `/app/zetrc_training_hub/course/`
+- `/app/zetrc_training_hub/course_module/`
+- `/app/zetrc_training_hub/lesson/`
+
+### CRUD Model Names
+
+- `Lead` from [client_app/zetrc_training_hub/lead/models.py](/home/gresham/projects/education_center/client_app/zetrc_training_hub/lead/models.py:6)
+- `Inquiry` from [client_app/zetrc_training_hub/inquiry/models.py](/home/gresham/projects/education_center/client_app/zetrc_training_hub/inquiry/models.py:6)
+- `Proposal_Request` from [client_app/zetrc_training_hub/proposal_request/models.py](/home/gresham/projects/education_center/client_app/zetrc_training_hub/proposal_request/models.py:6)
+- `Course` from [client_app/zetrc_training_hub/course/models.py](/home/gresham/projects/education_center/client_app/zetrc_training_hub/course/models.py:6)
+- `Course_Module` from [client_app/zetrc_training_hub/course_module/models.py](/home/gresham/projects/education_center/client_app/zetrc_training_hub/course_module/models.py:8)
+- `Lesson_Content` from [client_app/zetrc_training_hub/lesson/models.py](/home/gresham/projects/education_center/client_app/zetrc_training_hub/lesson/models.py:9)
+
+## Notes For Teammates
+
+- Learner portal auth uses `/portal/*`, not `/api/*`.
+- Generic system CRUD uses `/api/*` with the `model` field.
+- Training hub URLs under `/app/zetrc_training_hub/*` are page routes, not direct CRUD APIs.
+- For training hub data operations, use the shared `/api/get-data/`, `/api/post-data/`, `/api/patch-data/`, and `/api/delete-doc/` endpoints with the correct model name.

@@ -1,0 +1,393 @@
+{
+  "info": {
+    "name": "ZETRC Education Center",
+    "_postman_id": "zetrc-education-center-collection",
+    "description": "API collection for ZETRC Education Center — Learner Auth + Training Hub CRUD",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000",
+      "description": "Change this to your friend's IP or ngrok URL e.g. http://41.175.23.45:8000"
+    }
+  ],
+  "item": [
+    {
+      "name": "Learner Authentication",
+      "item": [
+        {
+          "name": "Validate Signup Data",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/portal/validate-signup-data", "host": ["{{base_url}}"], "path": ["portal", "validate-signup-data"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"stage_1\": {\n    \"first_name\": \"John\",\n    \"last_name\": \"Doe\",\n    \"email\": \"learner@example.com\",\n    \"contact_no\": \"097xxxxxxx\",\n    \"password\": \"YourPassword123\",\n    \"password_confirmation\": \"YourPassword123\"\n  }\n}"
+            }
+          }
+        },
+        {
+          "name": "Submit Learner Registration",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/portal/submit-learner-registration", "host": ["{{base_url}}"], "path": ["portal", "submit-learner-registration"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"stage_1\": {\n    \"first_name\": \"John\",\n    \"last_name\": \"Doe\",\n    \"email\": \"learner@example.com\",\n    \"contact_no\": \"097xxxxxxx\",\n    \"password\": \"YourPassword123\",\n    \"password_confirmation\": \"YourPassword123\"\n  }\n}"
+            }
+          }
+        },
+        {
+          "name": "Login (Authenticate)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/portal/authenticate", "host": ["{{base_url}}"], "path": ["portal", "authenticate"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"learner@example.com\",\n  \"password\": \"YourPassword123\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Request OTP",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/portal/request-otp", "host": ["{{base_url}}"], "path": ["portal", "request-otp"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"learner@example.com\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Validate OTP",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/portal/validate-otp", "host": ["{{base_url}}"], "path": ["portal", "validate-otp"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"learner@example.com\",\n  \"otp\": \"123456\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Verify Signup OTP",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/portal/verify-signup-otp", "host": ["{{base_url}}"], "path": ["portal", "verify-signup-otp"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"learner@example.com\",\n  \"otp\": \"123456\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "CRUD - Course",
+      "item": [
+        {
+          "name": "Create Course",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/post-data/", "host": ["{{base_url}}"], "path": ["api", "post-data", ""] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"model\": \"Course\",\n  \"body\": {\n    \"name\": \"Python Basics\",\n    \"description\": \"Intro course\"\n  }\n}"
+            }
+          }
+        },
+        {
+          "name": "Get All Courses",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/api/get-data/?model=Course", "host": ["{{base_url}}"], "path": ["api", "get-data", ""], "query": [{ "key": "model", "value": "Course" }] }
+          }
+        },
+        {
+          "name": "Get Single Course",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/api/get-data/?model=Course&name=Python%20Basics", "host": ["{{base_url}}"], "path": ["api", "get-data", ""], "query": [{ "key": "model", "value": "Course" }, { "key": "name", "value": "Python Basics" }] }
+          }
+        },
+        {
+          "name": "Update Course",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/patch-data/", "host": ["{{base_url}}"], "path": ["api", "patch-data", ""] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"model\": \"Course\",\n  \"body\": {\n    \"name\": \"Python Basics\",\n    \"description\": \"Updated description\"\n  }\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete Course",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/delete-doc/", "host": ["{{base_url}}"], "path": ["api", "delete-doc", ""] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"model\": \"Course\",\n  \"body\": {\n    \"name\": \"Python Basics\"\n  }\n}"
+            }
+          }
+        },
+        {
+          "name": "Submit Course",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/submit-doc/", "host": ["{{base_url}}"], "path": ["api", "submit-doc", ""] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"model\": \"Course\",\n  \"body\": {\n    \"name\": \"Python Basics\"\n  }\n}"
+            }
+          }
+        },
+        {
+          "name": "Cancel Course",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/cancel-doc/", "host": ["{{base_url}}"], "path": ["api", "cancel-doc", ""] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"model\": \"Course\",\n  \"body\": {\n    \"name\": \"Python Basics\"\n  }\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "CRUD - Lead",
+      "item": [
+        {
+          "name": "Create Lead",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/post-data/", "host": ["{{base_url}}"], "path": ["api", "post-data", ""] },
+            "body": { "mode": "raw", "raw": "{\n  \"model\": \"Lead\",\n  \"body\": {\n    \"name\": \"\"\n  }\n}" }
+          }
+        },
+        {
+          "name": "Get All Leads",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/api/get-data/?model=Lead", "host": ["{{base_url}}"], "path": ["api", "get-data", ""], "query": [{ "key": "model", "value": "Lead" }] }
+          }
+        },
+        {
+          "name": "Get Single Lead",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/api/get-data/?model=Lead&name=", "host": ["{{base_url}}"], "path": ["api", "get-data", ""], "query": [{ "key": "model", "value": "Lead" }, { "key": "name", "value": "" }] }
+          }
+        },
+        {
+          "name": "Update Lead",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/patch-data/", "host": ["{{base_url}}"], "path": ["api", "patch-data", ""] },
+            "body": { "mode": "raw", "raw": "{\n  \"model\": \"Lead\",\n  \"body\": {\n    \"name\": \"\"\n  }\n}" }
+          }
+        },
+        {
+          "name": "Delete Lead",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/delete-doc/", "host": ["{{base_url}}"], "path": ["api", "delete-doc", ""] },
+            "body": { "mode": "raw", "raw": "{\n  \"model\": \"Lead\",\n  \"body\": {\n    \"name\": \"\"\n  }\n}" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "CRUD - Inquiry",
+      "item": [
+        {
+          "name": "Create Inquiry",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/post-data/", "host": ["{{base_url}}"], "path": ["api", "post-data", ""] },
+            "body": { "mode": "raw", "raw": "{\n  \"model\": \"Inquiry\",\n  \"body\": {\n    \"name\": \"\"\n  }\n}" }
+          }
+        },
+        {
+          "name": "Get All Inquiries",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/api/get-data/?model=Inquiry", "host": ["{{base_url}}"], "path": ["api", "get-data", ""], "query": [{ "key": "model", "value": "Inquiry" }] }
+          }
+        },
+        {
+          "name": "Update Inquiry",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/patch-data/", "host": ["{{base_url}}"], "path": ["api", "patch-data", ""] },
+            "body": { "mode": "raw", "raw": "{\n  \"model\": \"Inquiry\",\n  \"body\": {\n    \"name\": \"\"\n  }\n}" }
+          }
+        },
+        {
+          "name": "Delete Inquiry",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/delete-doc/", "host": ["{{base_url}}"], "path": ["api", "delete-doc", ""] },
+            "body": { "mode": "raw", "raw": "{\n  \"model\": \"Inquiry\",\n  \"body\": {\n    \"name\": \"\"\n  }\n}" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "CRUD - Proposal Request",
+      "item": [
+        {
+          "name": "Create Proposal Request",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/post-data/", "host": ["{{base_url}}"], "path": ["api", "post-data", ""] },
+            "body": { "mode": "raw", "raw": "{\n  \"model\": \"Proposal_Request\",\n  \"body\": {\n    \"name\": \"\"\n  }\n}" }
+          }
+        },
+        {
+          "name": "Get All Proposal Requests",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/api/get-data/?model=Proposal_Request", "host": ["{{base_url}}"], "path": ["api", "get-data", ""], "query": [{ "key": "model", "value": "Proposal_Request" }] }
+          }
+        },
+        {
+          "name": "Update Proposal Request",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/patch-data/", "host": ["{{base_url}}"], "path": ["api", "patch-data", ""] },
+            "body": { "mode": "raw", "raw": "{\n  \"model\": \"Proposal_Request\",\n  \"body\": {\n    \"name\": \"\"\n  }\n}" }
+          }
+        },
+        {
+          "name": "Delete Proposal Request",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/delete-doc/", "host": ["{{base_url}}"], "path": ["api", "delete-doc", ""] },
+            "body": { "mode": "raw", "raw": "{\n  \"model\": \"Proposal_Request\",\n  \"body\": {\n    \"name\": \"\"\n  }\n}" }
+          }
+        },
+        {
+          "name": "Submit Proposal Request",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/submit-doc/", "host": ["{{base_url}}"], "path": ["api", "submit-doc", ""] },
+            "body": { "mode": "raw", "raw": "{\n  \"model\": \"Proposal_Request\",\n  \"body\": {\n    \"name\": \"\"\n  }\n}" }
+          }
+        },
+        {
+          "name": "Cancel Proposal Request",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/cancel-doc/", "host": ["{{base_url}}"], "path": ["api", "cancel-doc", ""] },
+            "body": { "mode": "raw", "raw": "{\n  \"model\": \"Proposal_Request\",\n  \"body\": {\n    \"name\": \"\"\n  }\n}" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "CRUD - Course Module",
+      "item": [
+        {
+          "name": "Create Course Module",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/post-data/", "host": ["{{base_url}}"], "path": ["api", "post-data", ""] },
+            "body": { "mode": "raw", "raw": "{\n  \"model\": \"Course_Module\",\n  \"body\": {\n    \"name\": \"\"\n  }\n}" }
+          }
+        },
+        {
+          "name": "Get All Course Modules",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/api/get-data/?model=Course_Module", "host": ["{{base_url}}"], "path": ["api", "get-data", ""], "query": [{ "key": "model", "value": "Course_Module" }] }
+          }
+        },
+        {
+          "name": "Update Course Module",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/patch-data/", "host": ["{{base_url}}"], "path": ["api", "patch-data", ""] },
+            "body": { "mode": "raw", "raw": "{\n  \"model\": \"Course_Module\",\n  \"body\": {\n    \"name\": \"\"\n  }\n}" }
+          }
+        },
+        {
+          "name": "Delete Course Module",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/delete-doc/", "host": ["{{base_url}}"], "path": ["api", "delete-doc", ""] },
+            "body": { "mode": "raw", "raw": "{\n  \"model\": \"Course_Module\",\n  \"body\": {\n    \"name\": \"\"\n  }\n}" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "CRUD - Lesson Content",
+      "item": [
+        {
+          "name": "Create Lesson Content",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/post-data/", "host": ["{{base_url}}"], "path": ["api", "post-data", ""] },
+            "body": { "mode": "raw", "raw": "{\n  \"model\": \"Lesson_Content\",\n  \"body\": {\n    \"name\": \"\"\n  }\n}" }
+          }
+        },
+        {
+          "name": "Get All Lesson Contents",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/api/get-data/?model=Lesson_Content", "host": ["{{base_url}}"], "path": ["api", "get-data", ""], "query": [{ "key": "model", "value": "Lesson_Content" }] }
+          }
+        },
+        {
+          "name": "Update Lesson Content",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/patch-data/", "host": ["{{base_url}}"], "path": ["api", "patch-data", ""] },
+            "body": { "mode": "raw", "raw": "{\n  \"model\": \"Lesson_Content\",\n  \"body\": {\n    \"name\": \"\"\n  }\n}" }
+          }
+        },
+        {
+          "name": "Delete Lesson Content",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/delete-doc/", "host": ["{{base_url}}"], "path": ["api", "delete-doc", ""] },
+            "body": { "mode": "raw", "raw": "{\n  \"model\": \"Lesson_Content\",\n  \"body\": {\n    \"name\": \"\"\n  }\n}" }
+          }
+        }
+      ]
+    }
+  ]
+}
