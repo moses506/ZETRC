@@ -1,5 +1,6 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { authenticateLearner } from '../utils/api';
+import { useLanguage } from '../i18n/LanguageContext';
 
 type LoginProps = {
   onBackHome: () => void;
@@ -15,6 +16,7 @@ const trustPoints = [
 ];
 
 function Login({ onBackHome, onLogin, onGoRegister, notice }: LoginProps) {
+  const { t, tList } = useLanguage();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [keepSignedIn, setKeepSignedIn] = useState(true);
@@ -47,7 +49,7 @@ function Login({ onBackHome, onLogin, onGoRegister, notice }: LoginProps) {
       onLogin(response);
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : 'Unable to sign in right now.';
+        error instanceof Error ? error.message : t('unableSignIn');
       setErrorMessage(message);
     } finally {
       setIsSubmitting(false);
@@ -63,42 +65,41 @@ function Login({ onBackHome, onLogin, onGoRegister, notice }: LoginProps) {
       <div className="login-shell">
         <div className="login-intro">
           <button className="login-back" onClick={onBackHome}>
-            ← Back to landing page
+            {t('backLanding')}
           </button>
 
           <span className="hero-badge">
             <span className="badge-dot" />
-            Pilot Training Access
+            {t('pilotTrainingAccess')}
           </span>
 
           <h1 className="login-title">
-            Welcome back to the
-            <span className="hero-accent"> ZETRC Academy</span>
+            {t('welcomeAcademy')}
           </h1>
 
           <p className="login-copy">
-            Sign in to continue your pilot training, track assignments, and access climate-smart agriculture resources built for real field work.
+            {t('loginCopy')}
           </p>
 
           <div className="login-feature-panel glass-card">
             <div className="login-panel-header">
-              <span className="card-tag">Why trainees use this portal</span>
-              <span className="login-status">Live cohort</span>
+              <span className="card-tag">{t('whyTrainees')}</span>
+              <span className="login-status">{t('liveCohort')}</span>
             </div>
 
             <div className="login-metrics">
               <div className="login-metric">
-                <strong>5 modules</strong>
-                <span>Structured pilot pathway</span>
+                <strong>{t('fiveModules')}</strong>
+                <span>{t('structuredPathway')}</span>
               </div>
               <div className="login-metric">
-                <strong>Weekly tasks</strong>
-                <span>Simple progress tracking</span>
+                <strong>{t('weeklyTasks')}</strong>
+                <span>{t('simpleTracking')}</span>
               </div>
             </div>
 
             <div className="login-trust-list">
-              {trustPoints.map((point) => (
+              {tList('trustPoints').map((point) => (
                 <div className="login-trust-item" key={point}>
                   <span className="login-check">✓</span>
                   <span>{point}</span>
@@ -120,16 +121,16 @@ function Login({ onBackHome, onLogin, onGoRegister, notice }: LoginProps) {
               </div>
               <div className="brand-text">
                 <span className="brand-mark">ZETRC</span>
-                <span className="brand-sub">Training + Research</span>
+                <span className="brand-sub">{t('brandSub')}</span>
               </div>
             </div>
 
-            <div className="login-kicker">Member Login</div>
+            <div className="login-kicker">{t('memberLogin')}</div>
           </div>
 
           <div className="login-card-copy">
-            <h2>Continue your learning journey</h2>
-            <p>Use your pilot access details to open your training dashboard.</p>
+            <h2>{t('continueJourney')}</h2>
+            <p>{t('useAccess')}</p>
           </div>
 
           <form
@@ -149,7 +150,7 @@ function Login({ onBackHome, onLogin, onGoRegister, notice }: LoginProps) {
             ) : null}
 
             <label className="login-field">
-              <span>Email address</span>
+              <span>{t('emailAddress')}</span>
               <input
                 type="email"
                 placeholder="you@example.com"
@@ -162,10 +163,10 @@ function Login({ onBackHome, onLogin, onGoRegister, notice }: LoginProps) {
             </label>
 
             <label className="login-field">
-              <span>Password</span>
+              <span>{t('password')}</span>
               <input
                 type="password"
-                placeholder="Enter your password"
+                placeholder={t('enterPassword')}
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
                 autoComplete="current-password"
@@ -182,26 +183,26 @@ function Login({ onBackHome, onLogin, onGoRegister, notice }: LoginProps) {
                   onChange={(event) => setKeepSignedIn(event.target.checked)}
                   disabled={isSubmitting}
                 />
-                <span>Keep me signed in</span>
+                <span>{t('keepSignedIn')}</span>
               </label>
-              <button type="button" className="login-link-btn">Need help?</button>
+              <button type="button" className="login-link-btn">{t('needHelp')}</button>
             </div>
 
             <button type="submit" className="btn-hero-teal login-submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Signing in...' : 'Enter Dashboard →'}
+              {isSubmitting ? t('signingIn') : t('enterDashboard')}
             </button>
           </form>
 
           <div className="auth-switch">
-            New to ZETRC?
+            {t('newToZetrc')}
             <button type="button" className="login-link-btn" onClick={onGoRegister}>
-              Create an account
+              {t('createAccount')}
             </button>
           </div>
 
           <div className="login-footer-note">
             <span className="trust-dot" />
-            Protected access for registered ZETRC pilot trainees and partners
+            {t('protectedAccess')}
           </div>
         </div>
       </div>

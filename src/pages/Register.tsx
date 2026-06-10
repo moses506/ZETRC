@@ -1,5 +1,6 @@
 import { FormEvent, useState } from 'react';
 import { getApiMessage, submitLearnerRegistration } from '../utils/api';
+import { useLanguage } from '../i18n/LanguageContext';
 
 type RegisterProps = {
   onBackHome: () => void;
@@ -14,6 +15,7 @@ const partnerHighlights = [
 ];
 
 function Register({ onBackHome, onRegister, onGoLogin }: RegisterProps) {
+  const { t, tList } = useLanguage();
   const [firstName, setFirstName] = useState('');
   const [middleName, setMiddleName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -32,7 +34,7 @@ function Register({ onBackHome, onRegister, onGoLogin }: RegisterProps) {
     setErrorMessage(null);
 
     if (password !== passwordConfirmation) {
-      setErrorMessage('Password confirmation does not match.');
+      setErrorMessage(t('passwordMismatch'));
       return;
     }
 
@@ -65,10 +67,10 @@ function Register({ onBackHome, onRegister, onGoLogin }: RegisterProps) {
         }),
       );
 
-      onRegister(getApiMessage(response, 'Registration successful. Sign in to continue.'));
+      onRegister(getApiMessage(response, t('registerSuccess')));
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : 'Unable to create your account right now.';
+        error instanceof Error ? error.message : t('unableCreate');
       setErrorMessage(message);
     } finally {
       setIsSubmitting(false);
@@ -84,42 +86,41 @@ function Register({ onBackHome, onRegister, onGoLogin }: RegisterProps) {
       <div className="login-shell register-shell">
         <div className="login-intro">
           <button className="login-back" onClick={onBackHome}>
-            ← Back to landing page
+            {t('backLanding')}
           </button>
 
           <span className="hero-badge">
             <span className="badge-dot" />
-            Enrollment For Pilot Access
+            {t('enrollmentPilotAccess')}
           </span>
 
           <h1 className="login-title">
-            Register your
-            <span className="hero-accent"> training profile</span>
+            {t('registerProfile')}
           </h1>
 
           <p className="login-copy">
-            Create a ZETRC account for pilot training, advisory programs, and institution-supported learning. This setup helps us place each learner in the right cohort and support flow.
+            {t('registerCopy')}
           </p>
 
           <div className="login-feature-panel glass-card">
             <div className="login-panel-header">
-              <span className="card-tag">Built for practical onboarding</span>
-              <span className="login-status">Cohort-ready</span>
+              <span className="card-tag">{t('practicalOnboarding')}</span>
+              <span className="login-status">{t('cohortReady')}</span>
             </div>
 
             <div className="register-role-grid">
               <div className="register-role-card">
-                <strong>Farmers & trainees</strong>
-                <span>Join learning tracks, assignments, and certification pathways.</span>
+                <strong>{t('farmersTrainees')}</strong>
+                <span>{t('farmersTraineesDesc')}</span>
               </div>
               <div className="register-role-card">
-                <strong>Cooperatives & NGOs</strong>
-                <span>Register teams for supported delivery and coordinated reporting.</span>
+                <strong>{t('cooperativesNgos')}</strong>
+                <span>{t('cooperativesNgosDesc')}</span>
               </div>
             </div>
 
             <div className="login-trust-list">
-              {partnerHighlights.map((point) => (
+              {tList('partnerHighlights').map((point) => (
                 <div className="login-trust-item" key={point}>
                   <span className="login-check">✓</span>
                   <span>{point}</span>
@@ -141,16 +142,16 @@ function Register({ onBackHome, onRegister, onGoLogin }: RegisterProps) {
               </div>
               <div className="brand-text">
                 <span className="brand-mark">ZETRC</span>
-                <span className="brand-sub">Training + Research</span>
+                <span className="brand-sub">{t('brandSub')}</span>
               </div>
             </div>
 
-            <div className="login-kicker">Create Account</div>
+            <div className="login-kicker">{t('createAccount')}</div>
           </div>
 
           <div className="login-card-copy">
-            <h2>Start your registration</h2>
-            <p>Tell us who you are so we can assign the right learning path and support team.</p>
+            <h2>{t('startRegistration')}</h2>
+            <p>{t('registerIntro')}</p>
           </div>
 
           <form
@@ -165,7 +166,7 @@ function Register({ onBackHome, onRegister, onGoLogin }: RegisterProps) {
 
             <div className="register-grid">
               <label className="login-field">
-                <span>First name</span>
+                <span>{t('firstName')}</span>
                 <input
                   type="text"
                   placeholder="Chanda"
@@ -177,7 +178,7 @@ function Register({ onBackHome, onRegister, onGoLogin }: RegisterProps) {
                 />
               </label>
                <label className="login-field">
-                <span>Middle name</span>
+                <span>{t('middleName')}</span>
                 <input
                   type="text"
                   placeholder="Chileshe (optional)"
@@ -189,7 +190,7 @@ function Register({ onBackHome, onRegister, onGoLogin }: RegisterProps) {
               </label>
 
               <label className="login-field">
-                <span>Last name</span>
+                <span>{t('lastName')}</span>
                 <input
                   type="text"
                   placeholder="Mwale"
@@ -202,7 +203,7 @@ function Register({ onBackHome, onRegister, onGoLogin }: RegisterProps) {
               </label>
 
               <label className="login-field">
-                <span>Email address</span>
+                <span>{t('emailAddress')}</span>
                 <input
                   type="email"
                   placeholder="you@example.com"
@@ -215,7 +216,7 @@ function Register({ onBackHome, onRegister, onGoLogin }: RegisterProps) {
               </label>
 
               <label className="login-field">
-                <span>Phone number</span>
+                <span>{t('phoneNumber')}</span>
                 <input
                   type="tel"
                   placeholder="+260..."
@@ -228,7 +229,7 @@ function Register({ onBackHome, onRegister, onGoLogin }: RegisterProps) {
               </label>
 
               <label className="login-field">
-                <span>Organization or cooperative</span>
+                <span>{t('organization')}</span>
                 <input
                   type="text"
                   placeholder="Optional but useful for cohort setup"
@@ -239,7 +240,7 @@ function Register({ onBackHome, onRegister, onGoLogin }: RegisterProps) {
               </label>
 
               <label className="login-field">
-                <span>Province / district</span>
+                <span>{t('provinceDistrict')}</span>
                 <input
                   type="text"
                   placeholder="Lusaka, Kasama, Chipata..."
@@ -250,7 +251,7 @@ function Register({ onBackHome, onRegister, onGoLogin }: RegisterProps) {
               </label>
 
               <label className="login-field">
-                <span>Create password</span>
+                <span>{t('createPassword')}</span>
                 <input
                   type="password"
                   placeholder="Choose a secure password"
@@ -264,7 +265,7 @@ function Register({ onBackHome, onRegister, onGoLogin }: RegisterProps) {
               </label>
 
               <label className="login-field">
-                <span>Confirm password</span>
+                <span>{t('confirmPassword')}</span>
                 <input
                   type="password"
                   placeholder="Repeat your password"
@@ -286,19 +287,19 @@ function Register({ onBackHome, onRegister, onGoLogin }: RegisterProps) {
                   onChange={(event) => setAgreeToUpdates(event.target.checked)}
                   disabled={isSubmitting}
                 />
-                <span>I agree to be contacted about enrollment and training updates</span>
+                <span>{t('updatesAgreement')}</span>
               </label>
             </div>
 
             <button type="submit" className="btn-hero-teal login-submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Creating account...' : 'Create Account →'}
+              {isSubmitting ? t('creatingAccount') : t('createAccountArrow')}
             </button>
           </form>
 
           <div className="auth-switch">
-            Already registered?
+            {t('alreadyRegistered')}
             <button type="button" className="login-link-btn" onClick={() => onGoLogin()}>
-              Sign in
+              {t('signIn')}
             </button>
           </div>
         </div>

@@ -5,6 +5,7 @@ import {
   type Course,
 } from '../utils/api';
 import type { LearnerProfile } from '../utils/auth';
+import { useLanguage } from '../i18n/LanguageContext';
 
 type CourseEnrollmentProps = {
   learnerProfile: LearnerProfile;
@@ -18,6 +19,7 @@ function CourseEnrollment({
   onEnrollmentComplete,
   onBackToLogin,
 }: CourseEnrollmentProps) {
+  const { t, tList } = useLanguage();
   const [courses, setCourses] = useState<Course[]>([]);
   const [selectedCourseName, setSelectedCourseName] = useState('');
   const [description, setDescription] = useState('');
@@ -43,7 +45,7 @@ function CourseEnrollment({
         if (cancelled) return;
 
         setErrorMessage(
-          error instanceof Error ? error.message : 'Unable to load courses right now.',
+          error instanceof Error ? error.message : t('unableCourses'),
         );
       } finally {
         if (!cancelled) {
@@ -66,7 +68,7 @@ function CourseEnrollment({
     event.preventDefault();
 
     if (!selectedCourse) {
-      setErrorMessage('Please select a course before continuing.');
+      setErrorMessage(t('selectCourseError'));
       return;
     }
 
@@ -87,7 +89,7 @@ function CourseEnrollment({
       setErrorMessage(
         error instanceof Error
           ? error.message
-          : 'Unable to submit your enrollment right now.',
+          : t('unableEnroll'),
       );
     } finally {
       setIsSubmitting(false);
@@ -103,43 +105,35 @@ function CourseEnrollment({
       <div className="login-shell course-enrollment-shell">
         <div className="login-intro">
           <button className="login-back" onClick={onBackToLogin}>
-            ← Back to sign in
+            {t('backSignIn')}
           </button>
 
           <span className="hero-badge">
             <span className="badge-dot" />
-            First-Time Enrollment
+            {t('firstTimeEnrollment')}
           </span>
 
           <h1 className="login-title">
-            Choose your
-            <span className="hero-accent"> learning course</span>
+            {t('chooseCourse')}
           </h1>
 
           <p className="login-copy">
-            Welcome, {learnerProfile.firstName || 'Learner'}. Before entering your dashboard,
-            select the course you want to enroll in so we can prepare your training path.
+            {t('welcomeLearner')}, {learnerProfile.firstName || t('learnerFallback')}. {t('courseIntro')}
           </p>
 
           <div className="login-feature-panel glass-card">
             <div className="login-panel-header">
-              <span className="card-tag">Enrollment details</span>
-              <span className="login-status">Required</span>
+              <span className="card-tag">{t('enrollmentDetails')}</span>
+              <span className="login-status">{t('required')}</span>
             </div>
 
             <div className="login-trust-list">
-              <div className="login-trust-item">
-                <span className="login-check">✓</span>
-                <span>Your name and email will be used from your learner account.</span>
-              </div>
-              <div className="login-trust-item">
-                <span className="login-check">✓</span>
-                <span>You only need to do this once before accessing the dashboard.</span>
-              </div>
-              <div className="login-trust-item">
-                <span className="login-check">✓</span>
-                <span>You can tell us what you hope to learn in the short note below.</span>
-              </div>
+              {tList('enrollmentPoints').map((point) => (
+                <div className="login-trust-item" key={point}>
+                  <span className="login-check">✓</span>
+                  <span>{point}</span>
+                </div>
+              ))}
             </div>
           </div>
         </div>
@@ -162,16 +156,16 @@ function CourseEnrollment({
               </div>
               <div className="brand-text">
                 <span className="brand-mark">ZETRC</span>
-                <span className="brand-sub">Training + Research</span>
+                <span className="brand-sub">{t('brandSub')}</span>
               </div>
             </div>
 
-            <div className="login-kicker">Enroll</div>
+            <div className="login-kicker">{t('enroll')}</div>
           </div>
 
           <div className="login-card-copy">
-            <h2>Complete course enrollment</h2>
-            <p>Pick a course to unlock your learner dashboard and training resources.</p>
+            <h2>{t('completeEnrollment')}</h2>
+            <p>{t('pickCourse')}</p>
           </div>
 
           <form className="login-form" onSubmit={handleSubmit}>
@@ -187,17 +181,17 @@ function CourseEnrollment({
 
             <div className="course-summary-card">
               <div>
-                <span className="course-summary-label">Learner</span>
+                <span className="course-summary-label">{t('learner')}</span>
                 <strong>{learnerProfile.fullName}</strong>
               </div>
               <div>
-                <span className="course-summary-label">Email</span>
-                <strong>{learnerProfile.email || 'No email provided'}</strong>
+                <span className="course-summary-label">{t('email')}</span>
+                <strong>{learnerProfile.email || t('noEmail')}</strong>
               </div>
             </div>
 
             <label className="login-field">
-              <span>Select course</span>
+              <span>{t('selectCourse')}</span>
               <select
                 value={selectedCourseName}
                 onChange={(event) => setSelectedCourseName(event.target.value)}
@@ -205,9 +199,9 @@ function CourseEnrollment({
                 required
               >
                 {isLoadingCourses ? (
-                  <option value="">Loading courses...</option>
+                  <option value="">{t('loadingCourses')}</option>
                 ) : courses.length === 0 ? (
-                  <option value="">No courses available</option>
+                  <option value="">{t('noCourses')}</option>
                 ) : (
                   courses.map((course) => (
                     <option key={course.name} value={course.name}>
@@ -221,22 +215,22 @@ function CourseEnrollment({
             {selectedCourse ? (
               <div className="course-preview-card">
                 <div className="course-preview-top">
-                  <span className="card-tag">Selected course</span>
+                  <span className="card-tag">{t('selectedCourse')}</span>
                   {selectedCourse.duration ? (
                     <span className="course-duration-pill">{selectedCourse.duration}</span>
                   ) : null}
                 </div>
                 <h3>{selectedCourse.name}</h3>
-                <p>{selectedCourse.description || 'No course description is available yet.'}</p>
+                <p>{selectedCourse.description || t('noCourseDesc')}</p>
               </div>
             ) : null}
 
             <label className="login-field">
-              <span>Why are you interested in this course?</span>
+              <span>{t('courseInterest')}</span>
               <textarea
                 className="login-textarea"
                 rows={5}
-                placeholder="Share what you want to learn or the outcomes you want from this course."
+                placeholder={t('courseInterestPlaceholder')}
                 value={description}
                 onChange={(event) => setDescription(event.target.value)}
                 disabled={isSubmitting}
@@ -248,7 +242,7 @@ function CourseEnrollment({
               className="btn-hero-teal login-submit"
               disabled={isLoadingCourses || isSubmitting || !selectedCourse}
             >
-              {isSubmitting ? 'Submitting enrollment...' : 'Enroll and Continue →'}
+              {isSubmitting ? t('submittingEnrollment') : t('enrollContinue')}
             </button>
           </form>
         </div>

@@ -154,6 +154,45 @@ textarea {
 }
 .btn-ghost-sm:hover { color: var(--white); border-color: rgba(255,255,255,0.2); }
 
+.language-switcher {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid rgba(245,197,66,0.32);
+  border-radius: 999px;
+  background: rgba(3,43,20,0.92);
+  box-shadow: 0 16px 40px rgba(4,18,12,0.24);
+  backdrop-filter: blur(14px);
+}
+
+.language-switcher label {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.language-switcher select {
+  min-width: 118px;
+  border: 1px solid rgba(245,197,66,0.28);
+  border-radius: 999px;
+  background: rgba(234,247,222,0.1);
+  color: var(--white);
+  padding: 0.35rem 0.65rem;
+  outline: none;
+}
+
+.language-switcher select:focus {
+  border-color: rgba(245,197,66,0.78);
+  box-shadow: 0 0 0 3px rgba(245,197,66,0.14);
+}
+
 /* ─── HERO ───────────────────────────────────────── */
 .hero {
   position: relative; overflow: hidden;

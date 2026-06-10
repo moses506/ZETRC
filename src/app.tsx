@@ -14,6 +14,7 @@ import {
   type LearnerProfile,
 } from './utils/auth';
 import type { Course } from './utils/api';
+import { useLanguage } from './i18n/LanguageContext';
 
 type PageKey = 'home' | 'training' | 'login' | 'register' | 'course-enrollment' | 'dashboard';
 
@@ -44,6 +45,7 @@ function getPageFromHash(hash: string): PageKey {
 }
 
 function App() {
+  const { t } = useLanguage();
   const [page, setPage] = useState<PageKey>(() => getPageFromHash(window.location.hash));
   const [authNotice, setAuthNotice] = useState<string | null>(null);
   const [learnerProfile, setLearnerProfile] = useState<LearnerProfile>(
@@ -101,7 +103,7 @@ function App() {
   };
 
   const handleRegister = (notice?: string) => {
-    setAuthNotice(notice ?? 'Registration successful. Sign in to continue.');
+    setAuthNotice(notice ?? t('registerSuccess'));
     setPage('login');
   };
 

@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState, type CSSProperties } from "re
 import kundaLesson01 from "../assets/kunda_lesson-01.jpeg";
 import kundaLesson02 from "../assets/kunda_lesson -02.jpeg";
 import kundaLesson03 from "../assets/kunda_lesson-03.jpeg";
+import { useLanguage } from "../i18n/LanguageContext";
 
 type HomeProps = {
   onJoinPilot: () => void;
@@ -12,36 +13,6 @@ type HomeProps = {
 };
 
 // ── SLIDES ──────────────────────────────────────────────────────────────────
-const slides = [
-  {
-    img: kundaLesson01,
-    alt: "ZETRC trainer leading a practical lesson session with farmers",
-    objectPosition: "center 42%",
-    tag: "Lesson Sessions",
-    headline: "Turning Agricultural Knowledge Into",
-    accent: "Real-World Impact",
-    sub: "ZETRC helps farmers, NGOs, and institutions implement climate-resilient agriculture that improves productivity and income across Zambia.",
-  },
-  {
-    img: kundaLesson02,
-    alt: "Farmers participating in a ZETRC hands-on training session",
-    objectPosition: "center",
-    tag: "Farmer Empowerment",
-    headline: "Equipping Smallholders With",
-    accent: "Skills That Last",
-    sub: "Our hands-on training programs reach farmers in 6 provinces, building capacity that outlasts any single project or funding cycle.",
-  },
-  {
-    img: kundaLesson03,
-    alt: "ZETRC lesson session with farmers learning in the field",
-    objectPosition: "center",
-    tag: "Field Learning",
-    headline: "Adapting Agriculture For",
-    accent: "A Changing Climate",
-    sub: "Evidence-based, locally rooted practices that help communities thrive in the face of drought, erratic rains, and soil degradation.",
-  },
-];
-
 // ── STYLES ──────────────────────────────────────────────────────────────────
 const S: Record<string, CSSProperties> = {
   root: {
@@ -579,11 +550,41 @@ const S: Record<string, CSSProperties> = {
 const INTERVAL = 5500;
 
 function Home({ onJoinPilot, onRequestProposal }: HomeProps) {
+  const { t, tList } = useLanguage();
   const [current, setCurrent] = useState(0);
   const [progress, setProgress] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const progressRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const styleRef = useRef<HTMLStyleElement | null>(null);
+  const slides = [
+    {
+      img: kundaLesson01,
+      alt: "ZETRC trainer leading a practical lesson session with farmers",
+      objectPosition: "center 42%",
+      tag: t("hero1Tag"),
+      headline: t("hero1Headline"),
+      accent: t("hero1Accent"),
+      sub: t("hero1Sub"),
+    },
+    {
+      img: kundaLesson02,
+      alt: "Farmers participating in a ZETRC hands-on training session",
+      objectPosition: "center",
+      tag: t("hero2Tag"),
+      headline: t("hero2Headline"),
+      accent: t("hero2Accent"),
+      sub: t("hero2Sub"),
+    },
+    {
+      img: kundaLesson03,
+      alt: "ZETRC lesson session with farmers learning in the field",
+      objectPosition: "center",
+      tag: t("hero3Tag"),
+      headline: t("hero3Headline"),
+      accent: t("hero3Accent"),
+      sub: t("hero3Sub"),
+    },
+  ];
 
   useEffect(() => {
     const el = document.createElement("style");
@@ -687,10 +688,10 @@ function Home({ onJoinPilot, onRequestProposal }: HomeProps) {
             <p style={S.slideSub}>{slides[current].sub}</p>
             <div style={S.slideBtns}>
               <button style={S.btnWhite} onClick={onRequestProposal}>
-                Request a Proposal →
+                {t("requestProposalArrow")}
               </button>
               <button style={S.btnGhost} onClick={onJoinPilot}>
-                Join Pilot Training
+                {t("joinPilotTraining")}
               </button>
             </div>
           </div>
@@ -698,9 +699,9 @@ function Home({ onJoinPilot, onRequestProposal }: HomeProps) {
           {/* Right: frosted glass stat cards */}
           <div style={{ ...S.statsPanel, animation: "slideFadeIn 0.9s ease forwards" }}>
             {[
-              { n: "200+", l: "Farmers trained" },
-              { n: "6", l: "Provinces reached" },
-              { n: "3", l: "Partner orgs" },
+              { n: "200+", l: t("farmersTrained") },
+              { n: "6", l: t("provincesReached") },
+              { n: "3", l: t("partnerOrgs") },
             ].map((s) => (
               <div key={s.l} style={S.statCard}>
                 <div style={S.statCardNum}>{s.n}</div>
@@ -733,28 +734,21 @@ function Home({ onJoinPilot, onRequestProposal }: HomeProps) {
       {/* ── SERVICES ── */}
       <section style={S.services} id="services">
         <div style={S.servicesHeader}>
-          <div style={S.sectionLabel}>What we offer</div>
+          <div style={S.sectionLabel}>{t("whatWeOffer")}</div>
           <div style={S.sectionTitle}>
-            Built for Farmers and Partners<br />Who Drive Change
+            {t("servicesTitle")}
           </div>
           <p style={S.servicesSubtitle}>
-            Training programs, digital learning, and implementation support
-            tailored to Zambia's agricultural landscape.
+            {t("servicesSubtitle")}
           </p>
         </div>
 
         <div style={S.servicesGrid}>
           <div style={S.cardLight}>
             <div style={{ ...S.serviceIcon, ...S.iconGreenBg }}>👥</div>
-            <div style={S.serviceTitle}>Who This Is For</div>
+            <div style={S.serviceTitle}>{t("whoThisIsFor")}</div>
             <ul style={S.serviceList}>
-              {[
-                "Small-scale farmers",
-                "Youth in agriculture",
-                "Cooperatives & farmer groups",
-                "NGOs & development organizations",
-                "Government institutions",
-              ].map((item) => (
+              {tList("audienceList").map((item) => (
                 <li key={item} style={S.serviceListItem}>
                   <span style={S.checkBadge}>✓</span>
                   {item}
@@ -767,29 +761,27 @@ function Home({ onJoinPilot, onRequestProposal }: HomeProps) {
             <div style={{ ...S.serviceIcon, ...S.iconGoldBg }}>🎓</div>
             <div style={S.serviceTitle}>ZETRC Academy</div>
             <div style={S.serviceDesc}>
-              A digital learning platform with structured modules, certifications,
-              and mobile-first access designed for rural communities.
+              {t("academyDesc")}
             </div>
             <div style={S.academyPills}>
-              {["Self-paced", "Certified", "Mobile-first"].map((pill) => (
+              {tList("academyPills").map((pill) => (
                 <span key={pill} style={S.pillPurple}>{pill}</span>
               ))}
             </div>
-            <a href="#academy" style={S.academyLink}>Get Early Access →</a>
+            <a href="#academy" style={S.academyLink}>{t("getEarlyAccess")}</a>
           </div>
 
           <div style={S.cardDark}>
             <div style={{ ...S.serviceIcon, ...S.iconDarkBg }}>🤝</div>
-            <div style={S.serviceTitleWhite}>Work With Us</div>
+            <div style={S.serviceTitleWhite}>{t("workWithUs")}</div>
             <div style={S.serviceDescMuted}>
-              Need implementation support, training delivery, or environmental
-              advisory? Let's build something together.
+              {t("workWithUsDesc")}
             </div>
             <button style={S.cardBtnGreen} onClick={onRequestProposal}>
-              Request Proposal
+              {t("requestProposal")}
             </button>
             <button style={S.cardBtnPale}>
-              <span>💬</span> WhatsApp Us
+              <span>💬</span> {t("whatsappUs")}
             </button>
           </div>
         </div>
@@ -799,28 +791,27 @@ function Home({ onJoinPilot, onRequestProposal }: HomeProps) {
       <section style={S.whyStrip}>
         <div style={S.whyInner}>
           <div>
-            <div style={S.whySectionLabel}>Why ZETRC</div>
+            <div style={S.whySectionLabel}>{t("whyZetrc")}</div>
             <div style={S.whySectionTitle}>
-              Grounded in<br />Local Context
+              {t("localContext")}
             </div>
             <p style={S.whyDesc}>
-              We don't import generic solutions. Our methodologies are designed
-              with and for Zambian farmers — practical, tested, and sustainable.
+              {t("whyDesc")}
             </p>
           </div>
           <div style={S.whyItems}>
-            {[
-              { icon: "📍", title: "Locally Rooted", desc: "Approaches built for Zambia's agroecological zones and farming realities." },
-              { icon: "📊", title: "Evidence-Based", desc: "Programs grounded in research and field-tested results across 6 provinces." },
-              { icon: "🌿", title: "Climate-Resilient", desc: "Solutions that help farmers adapt to and thrive in a changing climate." },
-              { icon: "🤝", title: "Partnership-Driven", desc: "We work alongside communities, NGOs, and government — not above them." },
-            ].map((item) => (
-              <div key={item.title} style={S.whyItem}>
-                <div style={S.whyItemIcon}>{item.icon}</div>
-                <div style={S.whyItemTitle}>{item.title}</div>
-                <div style={S.whyItemDesc}>{item.desc}</div>
+            {tList("whyItems").map((entry, index) => {
+              const [title, desc] = entry.split("|");
+              const icons = ["📍", "📊", "🌿", "🤝"];
+
+              return (
+              <div key={title} style={S.whyItem}>
+                <div style={S.whyItemIcon}>{icons[index]}</div>
+                <div style={S.whyItemTitle}>{title}</div>
+                <div style={S.whyItemDesc}>{desc}</div>
               </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </section>
@@ -829,19 +820,18 @@ function Home({ onJoinPilot, onRequestProposal }: HomeProps) {
       <section style={S.contact} id="contact">
         <div style={S.contactInner}>
           <div>
-            <div style={S.sectionLabel}>Get in touch</div>
+            <div style={S.sectionLabel}>{t("getInTouch")}</div>
             <div style={{ ...S.sectionTitle, fontSize: "2.4rem", marginBottom: "1rem" }}>
-              Work With ZETRC
+              {t("workWithZetrc")}
             </div>
             <p style={S.contactDesc}>
-              We partner with farmers, NGOs, private companies, and government
-              institutions through training, consultancy, and climate advisory support.
+              {t("contactDesc")}
             </p>
             <div style={S.contactLinks}>
               {[
-                { icon: "✉️", label: "Email", value: "info@zetrc.org" },
-                { icon: "📞", label: "Phone", value: "+260 97 9885086" },
-                { icon: "💬", label: "WhatsApp", value: "Message us directly" },
+                { icon: "✉️", label: t("email"), value: "info@zetrc.org" },
+                { icon: "📞", label: t("phone"), value: "+260 97 9885086" },
+                { icon: "💬", label: "WhatsApp", value: t("messageUs") },
               ].map((c) => (
                 <div key={c.label} style={S.contactLinkRow}>
                   <div style={S.contactLinkIcon}>{c.icon}</div>
@@ -852,23 +842,23 @@ function Home({ onJoinPilot, onRequestProposal }: HomeProps) {
                 </div>
               ))}
             </div>
-            <button style={S.btnPrimary}>Contact us on WhatsApp →</button>
+            <button style={S.btnPrimary}>{t("contactWhatsapp")}</button>
           </div>
 
           <div style={S.formCard}>
-            <div style={S.formTitle}>Request a Proposal</div>
+            <div style={S.formTitle}>{t("requestProposal")}</div>
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              <input type="text" placeholder="Organization / Full Name" style={S.input} />
+              <input type="text" placeholder={t("orgFullName")} style={S.input} />
               <div style={S.formRow}>
-                <input type="email" placeholder="Email Address" style={S.input} />
-                <input type="tel" placeholder="Phone Number" style={S.input} />
+                <input type="email" placeholder={t("emailAddress")} style={S.input} />
+                <input type="tel" placeholder={t("phoneNumber")} style={S.input} />
               </div>
               <textarea
-                placeholder="Tell us about your project needs..."
+                placeholder={t("projectNeeds")}
                 rows={5}
                 style={S.textarea}
               />
-              <button style={S.submitBtn}>Send Inquiry →</button>
+              <button style={S.submitBtn}>{t("sendInquiry")}</button>
             </div>
           </div>
         </div>

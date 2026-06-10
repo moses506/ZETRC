@@ -1,4 +1,5 @@
 import { ReactNode } from 'react';
+import { languages, useLanguage } from '../i18n/LanguageContext';
 import '../styles/global.css';
 
 type RootLayoutProps = {
@@ -20,6 +21,8 @@ function RootLayout({
   showChrome = true,
   currentPage = 'home',
 }: RootLayoutProps) {
+  const { language, setLanguage, t } = useLanguage();
+
   return (
     <div className="app-shell">
       {showChrome && (
@@ -35,7 +38,7 @@ function RootLayout({
               </div>
               <div className="brand-text">
                 <span className="brand-mark">ZETRC</span>
-                <span className="brand-sub">Training + Research</span>
+                <span className="brand-sub">{t('brandSub')}</span>
               </div>
             </div>
 
@@ -45,28 +48,43 @@ function RootLayout({
                 className={`nav-link-btn ${currentPage === 'home' ? 'nav-link-active' : ''}`}
                 onClick={onGoHome}
               >
-                Home
+                {t('navHome')}
               </button>
-              <a href="#services">Services</a>
+              <a href="#services">{t('navServices')}</a>
               <button
                 type="button"
                 className={`nav-link-btn ${currentPage === 'training' ? 'nav-link-active' : ''}`}
                 onClick={onGoTraining}
               >
-                Training
+                {t('navTraining')}
               </button>
-              <a href="#academy">Academy</a>
-              <a href="#about">About</a>
-              <a href="#contact">Contact</a>
+              <a href="#academy">{t('navAcademy')}</a>
+              <a href="#about">{t('navAbout')}</a>
+              <a href="#contact">{t('navContact')}</a>
             </nav>
 
             <div className="header-ctas">
-              <button className="btn-ghost" onClick={onJoinPilot}>Join Pilot</button>
-              <button className="btn-teal" onClick={onRequestProposal}>Request Proposal</button>
+              <button className="btn-ghost" onClick={onJoinPilot}>{t('joinPilot')}</button>
+              <button className="btn-teal" onClick={onRequestProposal}>{t('requestProposal')}</button>
             </div>
           </div>
         </header>
       )}
+
+      <div className="language-switcher" aria-label={t('language')}>
+        <label htmlFor="language-select">{t('language')}</label>
+        <select
+          id="language-select"
+          value={language}
+          onChange={(event) => setLanguage(event.target.value as typeof language)}
+        >
+          {languages.map((item) => (
+            <option key={item.code} value={item.code}>
+              {item.label}
+            </option>
+          ))}
+        </select>
+      </div>
 
       <main className="app-content">{children}</main>
 
@@ -84,26 +102,26 @@ function RootLayout({
                 </div>
                 <span className="brand-mark">ZETRC</span>
               </div>
-              <p className="footer-tagline">Turning agricultural and environmental knowledge into real-world impact through practical training, advisory, and research-driven action.</p>
+              <p className="footer-tagline">{t('footerTagline')}</p>
             </div>
 
             <div className="footer-col">
-              <h4>Explore</h4>
-              {['Home','Services','Pilot Training','Academy','About'].map(l => <a key={l} href="#">{l}</a>)}
+              <h4>{t('footerExplore')}</h4>
+              {[t('navHome'), t('navServices'), t('footerPilotTraining'), t('navAcademy'), t('navAbout')].map(l => <a key={l} href="#">{l}</a>)}
             </div>
 
             <div className="footer-col">
-              <h4>Contact</h4>
+              <h4>{t('navContact')}</h4>
               <span>✉ info@zetrc.org</span>
               <span>📞 +260 97 9885086</span>
               <span>📍 Lusaka, Zambia</span>
             </div>
 
             <div className="footer-cta-box">
-              <p className="footer-cta-title">Ready to partner?</p>
-              <p className="footer-cta-sub">For organizations and development partners seeking practical impact.</p>
-              <button className="btn-teal" style={{width:'100%', marginBottom:'0.6rem'}} onClick={onRequestProposal}>Request Proposal</button>
-              <button className="btn-ghost-sm" style={{width:'100%'}}>WhatsApp</button>
+              <p className="footer-cta-title">{t('footerReady')}</p>
+              <p className="footer-cta-sub">{t('footerReadySub')}</p>
+              <button className="btn-teal" style={{width:'100%', marginBottom:'0.6rem'}} onClick={onRequestProposal}>{t('requestProposal')}</button>
+              <button className="btn-ghost-sm" style={{width:'100%'}}>{t('footerWhatsApp')}</button>
             </div>
           </div>
           <div className="footer-bottom">

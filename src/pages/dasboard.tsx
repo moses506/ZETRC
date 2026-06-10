@@ -5,6 +5,7 @@ import { resolveApiAssetUrl, type Assignment, submitAssignmentSubmission } from 
 import { useLessons } from '../hooks/useLessons';
 import { useAssignments } from '../hooks/useAssignments';
 import { RichTextEditor } from '../components/RichTextEditor';
+import { useLanguage } from '../i18n/LanguageContext';
 
 type DashboardProps = {
   learnerEnrollment: LearnerEnrollment | null;
@@ -1940,6 +1941,7 @@ export default function Dashboard({
   onLogout,
   onRequestProposal,
 }: DashboardProps) {
+  const { t } = useLanguage();
   const [activeView, setActiveView] = useState<ViewKey>('dashboard');
   const { lessons } = useLessons();
   const {
@@ -1963,7 +1965,7 @@ export default function Dashboard({
           <div className="sb-icon-wrap"><ZetrcIcon size={20} /></div>
           <div>
             <div className="sb-name">ZETRC</div>
-            <div className="sb-tagline">Training + Research</div>
+            <div className="sb-tagline">{t('brandSub')}</div>
           </div>
         </div>
 
@@ -1977,51 +1979,51 @@ export default function Dashboard({
         </div>
 
         <nav className="sb-nav">
-          <div className="nav-group-label">Main</div>
+          <div className="nav-group-label">{t('main')}</div>
           <NavItem
             icon="grid"
-            label="Dashboard"
+            label={t('dashboard')}
             active={activeView === 'dashboard'}
             onClick={() => setActiveView('dashboard')}
           />
           <NavItem
             icon="book"
-            label="My Training"
+            label={t('myTraining')}
             badge="5"
             active={activeView === 'training'}
             onClick={() => setActiveView('training')}
           />
           <NavItem
             icon="clock"
-            label="Assignments"
+            label={t('assignments')}
             badge="2"
             active={activeView === 'assignments'}
             onClick={() => setActiveView('assignments')}
           />
           <NavItem
             icon="star"
-            label="Certificates"
+            label={t('certificates')}
             active={activeView === 'certificates'}
             onClick={() => setActiveView('certificates')}
           />
-          <div className="nav-group-label" style={{ marginTop: '8px' }}>Resources</div>
+          <div className="nav-group-label" style={{ marginTop: '8px' }}>{t('resources')}</div>
           <NavItem
             icon="file"
-            label="Learning Library"
+            label={t('learningLibrary')}
             badge="8"
             active={activeView === 'library'}
             onClick={() => setActiveView('library')}
           />
-          <NavItem icon="help" label="Support" onClick={openWhatsAppSupport} />
+          <NavItem icon="help" label={t('support')} onClick={openWhatsAppSupport} />
         </nav>
 
         <div className="sb-footer">
           <button className="wa-btn" type="button" onClick={openWhatsAppSupport}>
             <WaIcon />
-            WhatsApp Support
+            {t('support')}
           </button>
           <button className="logout-btn" onClick={onLogout}>
-            Log out
+            {t('logout')}
           </button>
         </div>
       </aside>
@@ -2033,12 +2035,12 @@ export default function Dashboard({
               {activeView === 'dashboard'
                 ? `Good morning, ${learnerProfile.firstName || 'Learner'}`
                 : activeView === 'training'
-                  ? 'My Training'
+                  ? t('myTraining')
                   : activeView === 'assignments'
-                  ? 'Assignments'
+                  ? t('assignments')
                   : activeView === 'certificates'
-                    ? 'Certificates'
-                    : 'Learning Library'}
+                    ? t('certificates')
+                    : t('learningLibrary')}
             </h1>
             <p className="date-line">
               {activeView === 'dashboard'
@@ -2053,8 +2055,8 @@ export default function Dashboard({
             </p>
           </div>
           <div className="top-actions">
-            <button className="btn-ghost-top" onClick={onLogout}>Log out</button>
-            <button className="btn-ghost-top" onClick={onRequestProposal}>Request Proposal</button>
+            <button className="btn-ghost-top" onClick={onLogout}>{t('logout')}</button>
+            <button className="btn-ghost-top" onClick={onRequestProposal}>{t('requestProposal')}</button>
             <button
               className="btn-primary-top"
               onClick={() =>
@@ -2072,14 +2074,14 @@ export default function Dashboard({
               }
             >
               {activeView === 'dashboard'
-                ? 'Continue Training →'
+                ? t('continueTraining')
                 : activeView === 'training'
-                  ? 'View Assignments →'
+                  ? t('viewAssignments')
                   : activeView === 'assignments'
-                    ? 'View Certificates →'
+                    ? t('viewCertificates')
                     : activeView === 'certificates'
-                      ? 'Open Library →'
-                      : 'Back to Overview →'}
+                      ? t('openLibrary')
+                      : t('dashboard')}
             </button>
           </div>
         </div>

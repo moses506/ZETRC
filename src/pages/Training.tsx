@@ -1,5 +1,6 @@
 import { useLessons } from '../hooks/useLessons';
 import trainingSessionPhoto from '../assets/kunda_lesson -02.jpeg';
+import { useLanguage } from '../i18n/LanguageContext';
 
 type TrainingProps = {
   onApplyNow: () => void;
@@ -69,6 +70,7 @@ const snapshotItems = [
 ];
 
 function Training({ onApplyNow, onSignIn }: TrainingProps) {
+  const { t, tList } = useLanguage();
   const { lessons, isLoading, errorMessage } = useLessons();
   const uniqueModules = [...new Set(lessons.map((lesson) => lesson.module).filter(Boolean))];
   const firstLesson = lessons[0] ?? null;
@@ -80,27 +82,24 @@ function Training({ onApplyNow, onSignIn }: TrainingProps) {
   const trainingBenefits = firstLesson?.keyPoints?.length
     ? firstLesson.keyPoints.slice(0, 4)
     : [
-        'Short lessons designed for field schedules and mobile access',
-        'Assignments grounded in real farm observations and local conditions',
-        'Support for individuals, cooperatives, NGOs, and partner-led cohorts',
-        'Progress tracking that leads directly into the academy dashboard',
+        ...tList('trainingBenefits'),
       ];
   const snapshotItems = [
     {
-      label: 'Live lessons',
-      desc: `${lessons.length || 0} lesson${lessons.length === 1 ? '' : 's'} available now.`,
+      label: t('liveLessons'),
+      desc: `${lessons.length || 0} ${t('lessonsAvailable')}`,
     },
     {
-      label: 'Modules',
-      desc: `${uniqueModules.length || 0} learning module${uniqueModules.length === 1 ? '' : 's'} in the system.`,
+      label: t('modules'),
+      desc: `${uniqueModules.length || 0} ${t('learningModules')}`,
     },
     {
       label: 'Audio ready',
-      desc: `${lessons.filter((lesson) => lesson.audioFiles).length} lesson audio file${lessons.filter((lesson) => lesson.audioFiles).length === 1 ? '' : 's'} linked.`,
+      desc: `${lessons.filter((lesson) => lesson.audioFiles).length} ${t('audioLinked')}`,
     },
     {
       label: 'Attachments',
-      desc: `${lessons.filter((lesson) => lesson.attachments).length} lesson attachment${lessons.filter((lesson) => lesson.attachments).length === 1 ? '' : 's'} available.`,
+      desc: `${lessons.filter((lesson) => lesson.attachments).length} ${t('attachmentsAvailable')}`,
     },
   ];
 
@@ -110,36 +109,35 @@ function Training({ onApplyNow, onSignIn }: TrainingProps) {
       {/* ── HERO ── */}
       <div className="training-hero-card">
         <div className="training-hero-copy">
-          <span className="training-kicker">Training Journey</span>
+          <span className="training-kicker">{t('trainingJourney')}</span>
           <h2>
-            A practical path into<br />
-            the ZETRC Academy
+            {t('trainingHeroTitle')}
           </h2>
           <p>
             {firstLesson?.introduction ||
-              'This training page bridges the public website into registration, onboarding, and the academy dashboard without breaking the visual experience.'}
+              t('trainingHeroFallback')}
           </p>
 
           <div className="training-hero-actions">
             <button className="btn-primary-top" onClick={onApplyNow}>
-              Apply for Training →
+              {t('applyTraining')}
             </button>
             <button className="btn-ghost-top training-ghost-inverse" onClick={() => onSignIn()}>
-              I already have access
+              {t('alreadyHaveAccess')}
             </button>
           </div>
 
           <div className="training-meta-row">
             <div className="training-meta-pill">
-              <span>Live lessons</span>
+              <span>{t('liveLessons')}</span>
               <strong>{lessons.length || 0}</strong>
             </div>
             <div className="training-meta-pill">
-              <span>Modules</span>
+              <span>{t('modules')}</span>
               <strong>{uniqueModules.length || 0}</strong>
             </div>
             <div className="training-meta-pill">
-              <span>Current focus</span>
+              <span>{t('currentFocus')}</span>
               <strong>{firstLesson?.module || 'Training'}</strong>
             </div>
           </div>
@@ -153,8 +151,8 @@ function Training({ onApplyNow, onSignIn }: TrainingProps) {
             alt="Farmers attending a ZETRC lesson session"
           />
           <div className="training-snapshot-header">
-            <span className="card-tagline">Program snapshot</span>
-            <span className="training-pilot-badge">Pilot intake</span>
+            <span className="card-tagline">{t('programSnapshot')}</span>
+            <span className="training-pilot-badge">{t('pilotIntake')}</span>
           </div>
           <div className="training-snapshot-grid">
             {snapshotItems.map((item) => (
@@ -166,7 +164,7 @@ function Training({ onApplyNow, onSignIn }: TrainingProps) {
           </div>
           <div className="training-snapshot-footer">
             <span className="training-trust-dot" />
-            <span>Consistent with landing, registration, and dashboard screens</span>
+            <span>{t('snapshotFooter')}</span>
           </div>
         </div>
       </div>
@@ -175,9 +173,9 @@ function Training({ onApplyNow, onSignIn }: TrainingProps) {
       <div className="card training-flow-section">
         <div className="card-header">
           <div>
-            <p className="training-section-eyebrow">How it flows</p>
+            <p className="training-section-eyebrow">{t('howItFlows')}</p>
             <h3 className="card-title training-section-title">
-              One clear journey from interest to active learning
+              {t('journeyTitle')}
             </h3>
           </div>
         </div>
@@ -185,18 +183,22 @@ function Training({ onApplyNow, onSignIn }: TrainingProps) {
           {errorMessage
             ? errorMessage
             : isLoading
-              ? 'Loading lesson content from the training API...'
-              : 'The page introduces the program, helps users self-identify, and channels them into either registration or sign-in with no abrupt handoff.'}
+              ? t('trainingLoading')
+              : t('journeyLead')}
         </p>
 
         <div className="training-flow-grid">
-          {flowSteps.map((item) => (
-            <div className="training-flow-card" key={item.step}>
-              <span className="training-flow-step">{item.step}</span>
-              <h4 className="training-flow-title">{item.title}</h4>
-              <p className="training-flow-copy">{item.copy}</p>
+          {tList('flowSteps').map((entry, index) => {
+            const [title, copy] = entry.split('|');
+
+            return (
+            <div className="training-flow-card" key={title}>
+              <span className="training-flow-step">{String(index + 1).padStart(2, '0')}</span>
+              <h4 className="training-flow-title">{title}</h4>
+              <p className="training-flow-copy">{copy}</p>
             </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
@@ -207,15 +209,15 @@ function Training({ onApplyNow, onSignIn }: TrainingProps) {
         <div className="card">
           <div className="card-header">
             <div>
-              <p className="training-section-eyebrow">Program structure</p>
-              <span className="card-title">Modules that feel practical and local</span>
+              <p className="training-section-eyebrow">{t('programStructure')}</p>
+              <span className="card-title">{t('modulesPractical')}</span>
             </div>
           </div>
           <div className="training-track-list">
             {(trainingTracks.length > 0 ? trainingTracks : [{
-              title: 'Training content coming soon',
-              timing: 'Pending',
-              copy: 'No live lesson content has been published yet.',
+              title: t('comingSoon'),
+              timing: t('pending'),
+              copy: t('noLessons'),
             }]).map((track) => (
               <div className="training-track-row" key={track.title}>
                 <span className="training-track-badge">{track.timing}</span>
@@ -233,8 +235,8 @@ function Training({ onApplyNow, onSignIn }: TrainingProps) {
           <div className="card">
             <div className="card-header">
               <div>
-                <p className="training-section-eyebrow">Why it works</p>
-                <span className="card-title">Designed around real delivery conditions</span>
+                <p className="training-section-eyebrow">{t('whyItWorks')}</p>
+                <span className="card-title">{t('deliveryConditions')}</span>
               </div>
             </div>
             <div className="training-benefits-list">
@@ -249,16 +251,16 @@ function Training({ onApplyNow, onSignIn }: TrainingProps) {
 
           {/* CTA card */}
           <div className="training-cta-panel">
-            <p className="training-cta-kicker">Ready to move forward?</p>
+            <p className="training-cta-kicker">{t('readyForward')}</p>
             <p className="training-cta-copy">
-              Start with registration if you are new, or sign in if your cohort already has access.
+              {t('readyForwardCopy')}
             </p>
             <div className="training-cta-actions">
               <button className="btn-primary-top" onClick={onApplyNow}>
-                Register now
+                {t('registerNow')}
               </button>
               <button className="btn-ghost-top training-ghost-inverse" onClick={() => onSignIn()}>
-                Sign in
+                {t('signIn')}
               </button>
             </div>
           </div>
