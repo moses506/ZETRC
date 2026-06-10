@@ -130,7 +130,7 @@ Training hub page routes are defined in [client_app/zetrc_training_hub/urls.py](
 - `Course_Module` from [client_app/zetrc_training_hub/course_module/models.py](/home/gresham/projects/education_center/client_app/zetrc_training_hub/course_module/models.py:8)
 - `Lesson_Content` from [client_app/zetrc_training_hub/lesson/models.py](/home/gresham/projects/education_center/client_app/zetrc_training_hub/lesson/models.py:9)
 
-## Notes For Teammates
+## Notes For Teammates 
 
 - Learner portal auth uses `/portal/*`, not `/api/*`.
 - Generic system CRUD uses `/api/*` with the `model` field.

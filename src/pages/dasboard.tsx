@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type SyntheticEvent } from 'react';
+import { useEffect, useMemo, useState, type ChangeEvent, type SyntheticEvent } from 'react';
 import '../styles/dashboard.css';
 import type { LearnerEnrollment, LearnerProfile } from '../utils/auth';
 import { resolveApiAssetUrl, type Assignment, submitAssignmentSubmission } from '../utils/api';
@@ -32,11 +32,21 @@ type AudioBlobEntry = {
 type AssignmentSubmissionEntry = {
   response: string;
   submittedAt: string;
+  attachmentName?: string;
+  attachmentSize?: number;
+};
+
+type AssignmentUploadDraft = {
+  name: string;
+  size: number;
+  type: string;
+  dataUrl: string;
 };
 
 const whatsappSupportUrl =
   'https://wa.me/260979885086?text=Hello%20ZETRC%20support%2C%20I%20need%20help%20with%20my%20training%20dashboard.';
 const audioProgressStorageKey = 'zetrcLessonAudioProgress';
+const audioProgressUpdatedEvent = 'zetrcAudioProgressUpdated';
 const assignmentSubmissionStorageKey = 'zetrcAssignmentSubmissions';
 
 const modules = [
@@ -292,6 +302,7 @@ function readAudioProgress(): Record<string, AudioProgressEntry> {
 
 function writeAudioProgress(progress: Record<string, AudioProgressEntry>) {
   localStorage.setItem(audioProgressStorageKey, JSON.stringify(progress));
+  window.dispatchEvent(new Event(audioProgressUpdatedEvent));
 }
 
 function formatAudioTime(seconds: number): string {
@@ -346,6 +357,36 @@ function writeAssignmentSubmissions(
   submissions: Record<string, AssignmentSubmissionEntry>,
 ) {
   localStorage.setItem(assignmentSubmissionStorageKey, JSON.stringify(submissions));
+}
+
+function formatFileSize(size: number): string {
+  if (size < 1024) {
+    return `${size} B`;
+  }
+
+  if (size < 1024 * 1024) {
+    return `${Math.round(size / 1024)} KB`;
+  }
+
+  return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function readFileAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.addEventListener('load', () => {
+      resolve(typeof reader.result === 'string' ? reader.result : '');
+    });
+    reader.addEventListener('error', () => {
+      reject(new Error('Unable to prepare this file for upload.'));
+    });
+    reader.readAsDataURL(file);
+  });
+}
+
+function stripEditorHtml(value: string): string {
+  return value.replace(/<[^>]*>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim();
 }
 
 function formatAssignmentLecturer(item: Assignment): string {
@@ -421,6 +462,9 @@ function DashboardOverview({
     keyPoints: string[];
   }[];
 }) {
+  const [savedAudioProgress, setSavedAudioProgress] = useState<Record<string, AudioProgressEntry>>(
+    () => readAudioProgress(),
+  );
   const displayModules = liveModules.length > 0 ? liveModules : modules;
   const totalLessons = lessons.length;
   const totalModules =
@@ -434,6 +478,42 @@ function DashboardOverview({
   ).length;
   const resourceCoveragePct =
     totalLessons > 0 ? Math.round((resourceReadyLessons / totalLessons) * 100) : 0;
+  const getAudioProgressKey = (lesson: { name: string; module: string; audioFiles: string }) => {
+    const moduleName = lesson.module || lesson.name;
+    const href = resolveApiAssetUrl(lesson.audioFiles);
+
+    return `${moduleName}::${href}`;
+  };
+  const lessonProgressValues = lessons.map((lesson) => {
+    if (!lesson.audioFiles) {
+      return 0;
+    }
+
+    return savedAudioProgress[getAudioProgressKey(lesson)]?.percent ?? 0;
+  });
+  const completedLessonCount = lessonProgressValues.filter((percent) => percent >= 95).length;
+  const lessonCoveragePct =
+    totalLessons > 0
+      ? Math.round(
+          lessonProgressValues.reduce((total, percent) => total + percent, 0) / totalLessons,
+        )
+      : 0;
+
+  useEffect(() => {
+    const refreshAudioProgress = () => {
+      setSavedAudioProgress(readAudioProgress());
+    };
+
+    window.addEventListener(audioProgressUpdatedEvent, refreshAudioProgress);
+    window.addEventListener('storage', refreshAudioProgress);
+    window.addEventListener('focus', refreshAudioProgress);
+
+    return () => {
+      window.removeEventListener(audioProgressUpdatedEvent, refreshAudioProgress);
+      window.removeEventListener('storage', refreshAudioProgress);
+      window.removeEventListener('focus', refreshAudioProgress);
+    };
+  }, []);
 
   return (
     <>
@@ -504,13 +584,13 @@ function DashboardOverview({
             <span className="card-title">Lesson coverage</span>
           </div>
           <div className="ring-center">
-            <ProgressRing pct={resourceCoveragePct} />
-            <p className="ring-caption">{resourceReadyLessons} of {totalLessons} lessons ready</p>
+            <ProgressRing pct={lessonCoveragePct} />
+            <p className="ring-caption">{completedLessonCount} of {totalLessons} lessons completed</p>
           </div>
           <div className="mini-stats">
             <div className="mini-stat">
-              <div className="mini-val">{audioReadyCount}</div>
-              <div className="mini-lbl">Audio</div>
+              <div className="mini-val">{completedLessonCount}</div>
+              <div className="mini-lbl">Done</div>
             </div>
             <div className="mini-stat">
               <div className="mini-val">{attachmentCount}</div>
@@ -1341,10 +1421,14 @@ function AssignmentsView({
   const [submittedResponses, setSubmittedResponses] = useState<
     Record<string, AssignmentSubmissionEntry>
   >(() => readAssignmentSubmissions());
+  const [uploadedAssignments, setUploadedAssignments] = useState<
+    Record<string, AssignmentUploadDraft>
+  >({});
   const [submittingAssignments, setSubmittingAssignments] = useState<Record<string, boolean>>({});
   const [submissionErrors, setSubmissionErrors] = useState<Record<string, string>>({});
 
-  const liveAssignments = assignments.map((item) => ({
+  const visibleAssignments = assignments.filter((item) => !submittedResponses[item.name]);
+  const liveAssignments = visibleAssignments.map((item) => ({
     raw: item,
     title: item.name,
     due: item.submissionDate ? `Due ${formatAssignmentDate(item.submissionDate)}` : 'No due date',
@@ -1362,8 +1446,8 @@ function AssignmentsView({
           }
         : undefined,
   }));
-  const openTasks = assignments.filter((item) => toAssignmentStatus(item.status) !== 'scheduled').length;
-  const dueThisWeek = assignments.filter((item) => {
+  const openTasks = visibleAssignments.filter((item) => toAssignmentStatus(item.status) !== 'scheduled').length;
+  const dueThisWeek = visibleAssignments.filter((item) => {
     if (!item.submissionDate) {
       return false;
     }
@@ -1373,8 +1457,17 @@ function AssignmentsView({
     const daysUntilDue = (dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
     return daysUntilDue >= 0 && daysUntilDue <= 7;
   }).length;
-  const inReview = assignments.filter((item) => item.status.toLowerCase().includes('review')).length;
-  const activityItems = assignments.slice(0, 3).map((item) => ({
+  const inReview = visibleAssignments.filter((item) => item.status.toLowerCase().includes('review')).length;
+  const submittedActivityItems = Object.entries(submittedResponses)
+    .sort(([, first], [, second]) => second.submittedAt.localeCompare(first.submittedAt))
+    .map(([title, submission]) => ({
+      title,
+      meta: `Submitted in app on ${formatAssignmentDate(submission.submittedAt)}${
+        submission.attachmentName ? ` · ${submission.attachmentName}` : ''
+      }`,
+      state: 'done' as const,
+    }));
+  const assignmentActivityItems = assignments.slice(0, 3).map((item) => ({
     title: item.name,
     meta: `${item.status || 'Status unavailable'}${item.submissionDate ? ` · ${formatAssignmentDate(item.submissionDate)}` : ''}${submittedResponses[item.name] ? ' · submitted in app' : ''}`,
     state:
@@ -1386,10 +1479,17 @@ function AssignmentsView({
           ? 'current'
           : 'done',
   }));
+  const activityItems = [...submittedActivityItems, ...assignmentActivityItems].slice(0, 5);
   const handleSubmitAssignment = async (assignmentName: string) => {
-    const content = draftResponses[assignmentName]?.trim();
+    const content = draftResponses[assignmentName]?.trim() ?? '';
+    const upload = uploadedAssignments[assignmentName];
+    const hasTypedResponse = Boolean(stripEditorHtml(content));
 
-    if (!content) {
+    if (!hasTypedResponse && !upload) {
+      setSubmissionErrors((current) => ({
+        ...current,
+        [assignmentName]: 'Type a response or upload your assignment document.',
+      }));
       return;
     }
 
@@ -1413,15 +1513,18 @@ function AssignmentsView({
         studentFirstName: learnerProfile.firstName,
         studentLastName: learnerProfile.lastName,
         studentEmail: learnerProfile.email,
-        content: content,
+        content: hasTypedResponse ? content : `Uploaded assignment document: ${upload?.name}`,
+        attachment: upload?.dataUrl,
       });
 
       setSubmittedResponses((current) => {
         const next = {
           ...current,
           [assignmentName]: {
-            response: content,
+            response: hasTypedResponse ? content : '',
             submittedAt: new Date().toISOString(),
+            attachmentName: upload?.name,
+            attachmentSize: upload?.size,
           },
         };
         writeAssignmentSubmissions(next);
@@ -1432,6 +1535,12 @@ function AssignmentsView({
         ...current,
         [assignmentName]: '',
       }));
+      setUploadedAssignments((current) => {
+        const next = { ...current };
+        delete next[assignmentName];
+        return next;
+      });
+      setOpenAssignmentName(null);
     } catch (error) {
       setSubmissionErrors((current) => ({
         ...current,
@@ -1443,6 +1552,50 @@ function AssignmentsView({
         [assignmentName]: false,
       }));
     }
+  };
+
+  const handleAssignmentFileChange = async (
+    assignmentName: string,
+    event: ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = event.target.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    setSubmissionErrors((current) => ({
+      ...current,
+      [assignmentName]: '',
+    }));
+
+    try {
+      const dataUrl = await readFileAsDataUrl(file);
+
+      setUploadedAssignments((current) => ({
+        ...current,
+        [assignmentName]: {
+          name: file.name,
+          size: file.size,
+          type: file.type,
+          dataUrl,
+        },
+      }));
+    } catch (error) {
+      setSubmissionErrors((current) => ({
+        ...current,
+        [assignmentName]:
+          error instanceof Error ? error.message : 'Unable to prepare this file for upload.',
+      }));
+    }
+  };
+
+  const clearAssignmentFile = (assignmentName: string) => {
+    setUploadedAssignments((current) => {
+      const next = { ...current };
+      delete next[assignmentName];
+      return next;
+    });
   };
 
   return (
@@ -1477,7 +1630,7 @@ function AssignmentsView({
         <div className="assignments-board-card">
           <div className="card-header">
             <span className="card-title">Assignment board</span>
-            <span className="card-link">{isLoading ? 'Loading...' : `${assignments.length} live`}</span>
+            <span className="card-link">{isLoading ? 'Loading...' : `${visibleAssignments.length} open`}</span>
           </div>
 
           <div className="assignment-board-list">
@@ -1496,7 +1649,20 @@ function AssignmentsView({
                 }]
               : liveAssignments.length > 0
                 ? liveAssignments
-                : assignmentBoard).map((item) => (
+                : assignments.length > 0
+                  ? [{
+                      raw: null,
+                      title: 'All assignments submitted',
+                      due: 'No open assignments right now',
+                      status: 'scheduled',
+                      type: 'Complete',
+                      detail: 'Your submitted assignments have been recorded. New assignments will appear here when they are available.',
+                      remarks: 'Recent submissions are shown in the activity panel.',
+                      lecturer: 'ZETRC Academy',
+                      lecturerContact: '',
+                      badgeStyle: undefined,
+                    }]
+                  : assignmentBoard).map((item) => (
               <article className={`assignment-board-row row-${item.status}`} key={item.title}>
                 <div className="assignment-board-top">
                   <div>
@@ -1522,61 +1688,117 @@ function AssignmentsView({
                 ) : null}
                 <div className="assignment-board-footer">
                   <span>{item.due}</span>
-                  <button
-                    className="btn-primary-top assignment-inline-btn"
-                    type="button"
-                    onClick={() =>
-                      setOpenAssignmentName((current) =>
-                        current === item.title ? null : item.title,
-                      )
-                    }
-                  >
-                    {openAssignmentName === item.title ? 'Close task' : 'Open task →'}
-                  </button>
+                  {'raw' in item && item.raw ? (
+                    <button
+                      className="btn-primary-top assignment-inline-btn"
+                      type="button"
+                      onClick={() =>
+                        setOpenAssignmentName((current) =>
+                          current === item.title ? null : item.title,
+                        )
+                      }
+                    >
+                      {openAssignmentName === item.title ? 'Close task' : 'Open task →'}
+                    </button>
+                  ) : null}
                 </div>
                 {'raw' in item && item.raw ? (
                   openAssignmentName === item.title ? (
-                    <div className="training-audio-note" style={{ marginTop: '12px' }}>
-                      <div><strong>Assignment brief:</strong> {item.detail}</div>
-                      <div style={{ marginTop: '8px' }}><strong>Lecturer:</strong> {item.lecturer}</div>
-                      <div style={{ marginTop: '8px' }}><strong>Remarks:</strong> {item.remarks}</div>
-                      <div style={{ marginTop: '12px' }}>
-                        <span className="assignment-type">Your response</span>
-                        <RichTextEditor
-                          content={draftResponses[item.title] ?? submittedResponses[item.title]?.response ?? ''}
-                          onChange={(content) =>
-                            setDraftResponses((current) => ({
-                              ...current,
-                              [item.title]: content,
-                            }))
-                          }
-                          placeholder="Write your assignment response here..."
-                        />
-                      </div>
-                      <div className="training-resource-actions" style={{ marginTop: '12px' }}>
-                        <button
-                          type="button"
-                          className="btn-primary-top assignment-inline-btn"
-                          onClick={() => handleSubmitAssignment(item.title)}
-                          disabled={
-                            submittingAssignments[item.title] ||
-                            !(draftResponses[item.title] ?? submittedResponses[item.title]?.response ?? '').trim()
-                          }
-                        >
-                          {submittingAssignments[item.title] ? 'Submitting...' : 'Submit assignment'}
-                        </button>
-                      </div>
-                      {submissionErrors[item.title] ? (
-                        <div style={{ marginTop: '8px', color: '#dc3545', fontSize: '14px' }}>
-                          ✗ {submissionErrors[item.title]}
+                    (() => {
+                      const uploadedFile = uploadedAssignments[item.title];
+                      const savedSubmission = submittedResponses[item.title];
+                      const editorContent =
+                        draftResponses[item.title] ?? savedSubmission?.response ?? '';
+                      const canSubmit =
+                        Boolean(stripEditorHtml(editorContent)) || Boolean(uploadedFile);
+
+                      return (
+                        <div className="assignment-submission-panel">
+                          <div className="assignment-brief-grid">
+                            <div>
+                              <span className="assignment-type">Assignment brief</span>
+                              <p>{item.detail}</p>
+                            </div>
+                            <div>
+                              <span className="assignment-type">Lecturer</span>
+                              <p>{item.lecturer}</p>
+                            </div>
+                            <div>
+                              <span className="assignment-type">Remarks</span>
+                              <p>{item.remarks}</p>
+                            </div>
+                          </div>
+
+                          <div className="assignment-upload-box">
+                            <div>
+                              <span className="assignment-type">Upload assignment</span>
+                              <p>Attach a completed PDF, Word document, text file, or image.</p>
+                            </div>
+                            <label className="assignment-file-picker">
+                              <input
+                                type="file"
+                                accept=".pdf,.doc,.docx,.txt,.rtf,.jpg,.jpeg,.png"
+                                onChange={(event) => handleAssignmentFileChange(item.title, event)}
+                                disabled={submittingAssignments[item.title]}
+                              />
+                              Choose file
+                            </label>
+                            {uploadedFile ? (
+                              <div className="assignment-file-chip">
+                                <span>
+                                  {uploadedFile.name} · {formatFileSize(uploadedFile.size)}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => clearAssignmentFile(item.title)}
+                                  disabled={submittingAssignments[item.title]}
+                                >
+                                  Remove
+                                </button>
+                              </div>
+                            ) : null}
+                          </div>
+
+                          <div className="assignment-document-editor">
+                            <span className="assignment-type">Type in system</span>
+                            <RichTextEditor
+                              content={editorContent}
+                              onChange={(content) =>
+                                setDraftResponses((current) => ({
+                                  ...current,
+                                  [item.title]: content,
+                                }))
+                              }
+                              placeholder="Start typing your assignment..."
+                            />
+                          </div>
+
+                          <div className="training-resource-actions assignment-submit-row">
+                            <button
+                              type="button"
+                              className="btn-primary-top assignment-inline-btn"
+                              onClick={() => handleSubmitAssignment(item.title)}
+                              disabled={submittingAssignments[item.title] || !canSubmit}
+                            >
+                              {submittingAssignments[item.title] ? 'Submitting...' : 'Submit assignment'}
+                            </button>
+                          </div>
+                          {submissionErrors[item.title] ? (
+                            <div className="assignment-submit-error">
+                              {submissionErrors[item.title]}
+                            </div>
+                          ) : null}
+                          {savedSubmission ? (
+                            <div className="assignment-submit-success">
+                              Submitted in app on {formatAssignmentDate(savedSubmission.submittedAt)}
+                              {savedSubmission.attachmentName
+                                ? ` · ${savedSubmission.attachmentName}`
+                                : ''}
+                            </div>
+                          ) : null}
                         </div>
-                      ) : null}
-                      {submittedResponses[item.title] ? (
-                        <div style={{ marginTop: '8px', color: '#28a745' }}>
-                          ✓ Submitted in app on {formatAssignmentDate(submittedResponses[item.title].submittedAt)}
-                        </div>
-                      ) : null}
-                    </div>
+                      );
+                    })()
                   ) : null
                 ) : null}
               </article>

@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import TextAlign from '@tiptap/extension-text-align';
@@ -24,6 +25,14 @@ export function RichTextEditor({ content, onChange, placeholder = 'Write your as
       onChange(editor.getHTML());
     },
   });
+
+  useEffect(() => {
+    if (!editor || editor.getHTML() === content) {
+      return;
+    }
+
+    editor.commands.setContent(content || '', { emitUpdate: false });
+  }, [content, editor]);
 
   if (!editor) {
     return null;
@@ -168,7 +177,7 @@ export function RichTextEditor({ content, onChange, placeholder = 'Write your as
       </div>
       <div className="editor-content-wrapper">
         <EditorContent editor={editor} className="editor-content" />
-        <div className="editor-placeholder">{placeholder}</div>
+        {editor.isEmpty ? <div className="editor-placeholder">{placeholder}</div> : null}
       </div>
     </div>
   );

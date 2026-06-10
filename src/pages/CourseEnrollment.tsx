@@ -1,7 +1,6 @@
 import { FormEvent, useEffect, useState } from 'react';
 import {
   fetchCourses,
-  getApiMessage,
   submitEnrollment,
   type Course,
 } from '../utils/api';
@@ -10,6 +9,7 @@ import type { LearnerProfile } from '../utils/auth';
 type CourseEnrollmentProps = {
   learnerProfile: LearnerProfile;
   onEnrollmentComplete: (course: Course, description: string, response: unknown) => void;
+  onAlreadyEnrolled?: (courseName: string, duration: string, description: string) => void;
   onBackToLogin: () => void;
 };
 
@@ -35,16 +35,12 @@ function CourseEnrollment({
       try {
         const result = await fetchCourses();
 
-        if (cancelled) {
-          return;
-        }
+        if (cancelled) return;
 
         setCourses(result);
         setSelectedCourseName(result[0]?.name ?? '');
       } catch (error) {
-        if (cancelled) {
-          return;
-        }
+        if (cancelled) return;
 
         setErrorMessage(
           error instanceof Error ? error.message : 'Unable to load courses right now.',
@@ -89,7 +85,9 @@ function CourseEnrollment({
       onEnrollmentComplete(selectedCourse, description.trim(), response);
     } catch (error) {
       setErrorMessage(
-        error instanceof Error ? error.message : 'Unable to submit your enrollment right now.',
+        error instanceof Error
+          ? error.message
+          : 'Unable to submit your enrollment right now.',
       );
     } finally {
       setIsSubmitting(false);
@@ -151,9 +149,15 @@ function CourseEnrollment({
             <div className="brand">
               <div className="brand-icon">
                 <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-                  <rect width="22" height="22" rx="6" fill="#071a14" />
-                  <path d="M11 3 L19 11 L11 19 L3 11 Z" stroke="#2dd4aa" strokeWidth="1.5" fill="none" strokeLinejoin="round"/>
-                  <circle cx="11" cy="11" r="2.5" fill="#2dd4aa" />
+                  <rect width="22" height="22" rx="6" fill="#032b14" />
+                  <path
+                    d="M11 3 L19 11 L11 19 L3 11 Z"
+                    stroke="#d9a51f"
+                    strokeWidth="1.5"
+                    fill="none"
+                    strokeLinejoin="round"
+                  />
+                  <circle cx="11" cy="11" r="2.5" fill="#d9a51f" />
                 </svg>
               </div>
               <div className="brand-text">
@@ -172,7 +176,11 @@ function CourseEnrollment({
 
           <form className="login-form" onSubmit={handleSubmit}>
             {errorMessage ? (
-              <div className="auth-feedback auth-feedback-error" role="alert" aria-live="assertive">
+              <div
+                className="auth-feedback auth-feedback-error"
+                role="alert"
+                aria-live="assertive"
+              >
                 {errorMessage}
               </div>
             ) : null}
@@ -219,9 +227,7 @@ function CourseEnrollment({
                   ) : null}
                 </div>
                 <h3>{selectedCourse.name}</h3>
-                <p>
-                  {selectedCourse.description || 'No course description is available yet.'}
-                </p>
+                <p>{selectedCourse.description || 'No course description is available yet.'}</p>
               </div>
             ) : null}
 

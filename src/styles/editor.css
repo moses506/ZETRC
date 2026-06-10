@@ -1,8 +1,8 @@
 /* Rich Text Editor Styles */
 .rich-editor-container {
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  background: #fff;
+  border: 1px solid rgba(15, 45, 35, 0.12);
+  border-radius: 8px;
+  background: #eef1f0;
   overflow: hidden;
 }
 
@@ -11,8 +11,8 @@
   flex-wrap: wrap;
   gap: 8px;
   padding: 12px;
-  background: #f8f9fa;
-  border-bottom: 1px solid #ddd;
+  background: #ffffff;
+  border-bottom: 1px solid rgba(15, 45, 35, 0.12);
   align-items: center;
 }
 
@@ -31,7 +31,7 @@
 .editor-toolbar button {
   padding: 6px 10px;
   background: #fff;
-  border: 1px solid #ccc;
+  border: 1px solid rgba(15, 45, 35, 0.16);
   border-radius: 4px;
   cursor: pointer;
   font-size: 14px;
@@ -42,8 +42,8 @@
 }
 
 .editor-toolbar button:hover:not(:disabled) {
-  background: #e9ecef;
-  border-color: #999;
+  background: #eef8f4;
+  border-color: rgba(29, 158, 117, 0.38);
 }
 
 .editor-toolbar button:disabled {
@@ -52,31 +52,41 @@
 }
 
 .editor-toolbar button.is-active {
-  background: #007bff;
+  background: var(--teal-dark);
   color: #fff;
-  border-color: #007bff;
+  border-color: var(--teal-dark);
 }
 
 .editor-content-wrapper {
   position: relative;
-  min-height: 400px;
-  max-height: 600px;
+  min-height: 560px;
+  max-height: 680px;
   overflow-y: auto;
+  padding: 24px;
+  background:
+    linear-gradient(#eef1f0 0 0) padding-box,
+    repeating-linear-gradient(0deg, transparent 0 31px, rgba(15, 45, 35, 0.04) 31px 32px);
 }
 
 .editor-content {
-  padding: 16px;
+  max-width: 760px;
+  min-height: 920px;
+  margin: 0 auto;
+  padding: 58px 64px;
+  border: 1px solid rgba(15, 45, 35, 0.08);
+  background: #ffffff;
+  box-shadow: 0 14px 36px rgba(15, 45, 35, 0.12);
   font-size: 16px;
-  line-height: 1.6;
+  line-height: 1.75;
   outline: none;
-  min-height: 400px;
+  color: #17221d;
 }
 
 .editor-placeholder {
   position: absolute;
-  top: 16px;
-  left: 16px;
-  color: #999;
+  top: 84px;
+  left: calc(50% - 316px);
+  color: #9ca3af;
   pointer-events: none;
   font-size: 16px;
 }
@@ -95,7 +105,7 @@
 }
 
 .ProseMirror p {
-  margin: 0 0 12px 0;
+  margin: 0 0 14px 0;
 }
 
 .ProseMirror h1,
@@ -194,14 +204,20 @@
   }
 
   .editor-content {
-    padding: 12px;
-    min-height: 300px;
+    padding: 36px 28px;
+    min-height: 640px;
     font-size: 15px;
   }
 
   .editor-content-wrapper {
-    min-height: 300px;
-    max-height: 400px;
+    min-height: 420px;
+    max-height: 560px;
+    padding: 14px;
+  }
+
+  .editor-placeholder {
+    top: 50px;
+    left: 42px;
   }
 }
 
@@ -228,13 +244,19 @@
   }
 
   .editor-content {
-    padding: 10px;
-    min-height: 250px;
+    padding: 28px 18px;
+    min-height: 520px;
     font-size: 14px;
   }
 
   .editor-content-wrapper {
-    min-height: 250px;
-    max-height: 350px;
+    min-height: 360px;
+    max-height: 500px;
+    padding: 10px;
+  }
+
+  .editor-placeholder {
+    top: 38px;
+    left: 28px;
   }
 }

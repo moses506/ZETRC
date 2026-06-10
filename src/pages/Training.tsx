@@ -1,4 +1,5 @@
 import { useLessons } from '../hooks/useLessons';
+import trainingSessionPhoto from '../assets/kunda_lesson -02.jpeg';
 
 type TrainingProps = {
   onApplyNow: () => void;
@@ -146,6 +147,11 @@ function Training({ onApplyNow, onSignIn }: TrainingProps) {
 
         {/* Snapshot card */}
         <div className="training-snapshot-panel">
+          <img
+            className="training-snapshot-photo"
+            src={trainingSessionPhoto}
+            alt="Farmers attending a ZETRC lesson session"
+          />
           <div className="training-snapshot-header">
             <span className="card-tagline">Program snapshot</span>
             <span className="training-pilot-badge">Pilot intake</span>

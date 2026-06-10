@@ -7,6 +7,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import CourseEnrollment from './pages/CourseEnrollment';
 import {
+  clearStoredLearnerData,
   getStoredLearnerEnrollment,
   getStoredLearnerProfile,
   type LearnerEnrollment,
@@ -45,7 +46,9 @@ function getPageFromHash(hash: string): PageKey {
 function App() {
   const [page, setPage] = useState<PageKey>(() => getPageFromHash(window.location.hash));
   const [authNotice, setAuthNotice] = useState<string | null>(null);
-  const [learnerProfile, setLearnerProfile] = useState<LearnerProfile>(() => getStoredLearnerProfile());
+  const [learnerProfile, setLearnerProfile] = useState<LearnerProfile>(
+    () => getStoredLearnerProfile(),
+  );
   const [learnerEnrollment, setLearnerEnrollment] = useState<LearnerEnrollment | null>(
     () => getStoredLearnerEnrollment(),
   );
@@ -77,33 +80,60 @@ function App() {
   const handleJoinPilot = () => setPage('training');
   const handleGoHome = () => setPage('home');
   const handleGoTraining = () => setPage('training');
+
   const handleLogin = () => {
     setLearnerProfile(getStoredLearnerProfile());
-    const savedEnrollment = getStoredLearnerEnrollment();
-    setLearnerEnrollment(savedEnrollment);
+    // Always clear any stale enrollment from a previous session so
+    // CourseEnrollment re-checks the backend for the newly logged-in user.
+    setLearnerEnrollment(null);
     setAuthNotice(null);
-    setPage(savedEnrollment ? 'dashboard' : 'course-enrollment');
+    setPage('course-enrollment');
   };
+
   const handleGoRegister = () => {
     setAuthNotice(null);
     setPage('register');
   };
+
   const handleGoLogin = (notice?: string) => {
     setAuthNotice(typeof notice === 'string' ? notice : null);
     setPage('login');
   };
+
   const handleRegister = (notice?: string) => {
     setAuthNotice(notice ?? 'Registration successful. Sign in to continue.');
     setPage('login');
   };
+
   const handleLogout = () => {
-    localStorage.removeItem('zetrcAuthSession');
-    localStorage.removeItem('zetrcRememberUser');
+    clearStoredLearnerData();
     setLearnerProfile(getStoredLearnerProfile());
-    setLearnerEnrollment(getStoredLearnerEnrollment());
+    setLearnerEnrollment(null);
     setPage('home');
   };
-  const handleEnrollmentComplete = (course: Course, description: string, response: unknown) => {
+
+  // Called by CourseEnrollment when the API confirms the user is already enrolled.
+  // We persist it to localStorage so the dashboard has something to read, then
+  // skip the form entirely.
+  const handleAlreadyEnrolled = (
+    courseName: string,
+    duration: string,
+    description: string,
+  ) => {
+    const nextEnrollment: LearnerEnrollment = { courseName, duration, description };
+
+    localStorage.setItem('zetrcEnrollment', JSON.stringify(nextEnrollment));
+
+    setLearnerEnrollment(nextEnrollment);
+    setPage('dashboard');
+  };
+
+  // Called by CourseEnrollment after a successful new enrollment submission.
+  const handleEnrollmentComplete = (
+    course: Course,
+    description: string,
+    response: unknown,
+  ) => {
     const nextEnrollment: LearnerEnrollment = {
       courseName: course.name,
       duration: course.duration,
@@ -123,6 +153,7 @@ function App() {
     setLearnerEnrollment(nextEnrollment);
     setPage('dashboard');
   };
+
   const handleRequestProposal = () => {
     setPage('home');
 
@@ -141,7 +172,9 @@ function App() {
       onGoTraining={handleGoTraining}
       onRequestProposal={handleRequestProposal}
     >
-      {page === 'home' && <Home onJoinPilot={handleJoinPilot} onRequestProposal={handleRequestProposal} />}
+      {page === 'home' && (
+        <Home onJoinPilot={handleJoinPilot} onRequestProposal={handleRequestProposal} />
+      )}
       {page === 'training' && (
         <Training onApplyNow={handleGoRegister} onSignIn={handleGoLogin} />
       )}
@@ -164,6 +197,7 @@ function App() {
         <CourseEnrollment
           learnerProfile={learnerProfile}
           onEnrollmentComplete={handleEnrollmentComplete}
+          onAlreadyEnrolled={handleAlreadyEnrolled}
           onBackToLogin={handleGoLogin}
         />
       )}

@@ -5,6 +5,7 @@ type ApiRecord = Record<string, unknown>;
 
 export type LearnerRegistrationPayload = {
   firstName: string;
+  middleName: string;
   lastName: string;
   email: string;
   contactNo: string;
@@ -30,6 +31,14 @@ export type EnrollmentPayload = {
   email: string;
   description: string;
   course: Course;
+};
+
+export type StudentEnrollment = {
+  id?: string | number;
+  email: string;
+  courseName: string;
+  duration: string;
+  description: string;
 };
 
 export type LessonContent = {
@@ -129,9 +138,8 @@ function toCourse(record: ApiRecord): Course | null {
   const duration = typeof record.duration === 'string' ? record.duration.trim() : '';
   const description =
     typeof record.description === 'string' ? stripHtml(record.description) : '';
-  const id = typeof record.id === 'string' || typeof record.id === 'number'
-      ? record.id
-      : undefined;
+  const id =
+    typeof record.id === 'string' || typeof record.id === 'number' ? record.id : undefined;
 
   return {
     id,
@@ -139,6 +147,78 @@ function toCourse(record: ApiRecord): Course | null {
     duration,
     description,
   };
+}
+
+function extractRows(payload: unknown): unknown[] {
+  if (Array.isArray(payload)) {
+    return payload;
+  }
+
+  if (!isRecord(payload)) {
+    return [];
+  }
+
+  if (Array.isArray(payload.data)) {
+    return payload.data;
+  }
+
+  if (Array.isArray(payload.rows)) {
+    return payload.rows;
+  }
+
+  if (Array.isArray(payload.results)) {
+    return payload.results;
+  }
+
+  if (Array.isArray(payload.message)) {
+    return payload.message;
+  }
+
+  if (Array.isArray(payload.docs)) {
+    return payload.docs;
+  }
+
+  if (Array.isArray(payload.items)) {
+    return payload.items;
+  }
+
+  if (isRecord(payload.data)) {
+    const nestedRows = extractRows(payload.data);
+
+    if (nestedRows.length > 0) {
+      return nestedRows;
+    }
+  }
+
+  if (isRecord(payload.message)) {
+    const nestedRows = extractRows(payload.message);
+
+    if (nestedRows.length > 0) {
+      return nestedRows;
+    }
+  }
+
+  if (typeof payload.error === 'string' && payload.error.trim()) {
+    throw new Error(payload.error.trim());
+  }
+
+  if (typeof payload.message === 'string' && payload.message.trim()) {
+    const message = payload.message.trim();
+
+    if (
+      message.toLowerCase().includes('error') ||
+      message.toLowerCase().includes('nonetype') ||
+      message.toLowerCase().includes('not iterable')
+    ) {
+      throw new Error(message);
+    }
+  }
+
+  if (typeof payload.name === 'string' && payload.name.trim()) {
+    return [payload];
+  }
+
+  return [];
 }
 
 function toLesson(record: ApiRecord): LessonContent | null {
@@ -197,6 +277,51 @@ function toAssignment(record: ApiRecord): Assignment | null {
       typeof record.status_color === 'string' ? record.status_color.trim() : '',
     statusInnerColor:
       typeof record.status_inner_color === 'string' ? record.status_inner_color.trim() : '',
+  };
+}
+
+function toStudentEnrollment(record: ApiRecord): StudentEnrollment | null {
+  // The API may return the course as a nested object or a plain string
+  const courseField = record.course;
+  const courseName =
+    isRecord(courseField) && typeof courseField.name === 'string'
+      ? courseField.name.trim()
+      : typeof courseField === 'string'
+        ? courseField.trim()
+        : typeof record.course_name === 'string'
+          ? record.course_name.trim()
+          : '';
+
+  if (!courseName) {
+    return null;
+  }
+
+  const duration =
+    isRecord(courseField) && typeof courseField.duration === 'string'
+      ? courseField.duration.trim()
+      : typeof record.duration === 'string'
+        ? record.duration.trim()
+        : '';
+
+  const description =
+    typeof record.description === 'string' ? stripHtml(record.description) : '';
+
+  const email =
+    typeof record.email === 'string'
+      ? record.email.trim()
+      : typeof record.student === 'string'
+        ? record.student.trim()
+        : '';
+
+  const id =
+    typeof record.id === 'string' || typeof record.id === 'number' ? record.id : undefined;
+
+  return {
+    id,
+    email,
+    courseName,
+    duration,
+    description,
   };
 }
 
@@ -283,7 +408,9 @@ async function request<TResponse>(path: string, init: RequestInit): Promise<TRes
       headers,
     });
   } catch {
-    throw new Error('Unable to reach the server right now. Please check the backend connection and try again.');
+    throw new Error(
+      'Unable to reach the server right now. Please check the backend connection and try again.',
+    );
   }
 
   const rawText = await response.text();
@@ -335,75 +462,59 @@ export async function authenticateLearner(payload: LearnerLoginPayload): Promise
 }
 
 export async function fetchCourses(): Promise<Course[]> {
-  const payload = await request<unknown>('/api/get-data/?Model=Course', {
+  const payload = await request<unknown>('/api/get-data/?model=Course', {
     method: 'GET',
     headers: {
-      Model: 'Course',
       model: 'Course',
     },
   });
 
-  const source = Array.isArray(payload)
-    ? payload
-    : isRecord(payload) && isRecord(payload.data) && Array.isArray(payload.data.rows)
-      ? payload.data.rows
-      : isRecord(payload) && Array.isArray(payload.data)
-        ? payload.data
-      : isRecord(payload) && Array.isArray(payload.results)
-        ? payload.results
-        : [];
-
-  return source
+  return extractRows(payload)
     .filter(isRecord)
     .map((item) => toCourse(item))
     .filter((item): item is Course => item !== null);
 }
 
-export async function fetchLessons(): Promise<LessonContent[]> {
-  const payload = await request<unknown>('/api/get-data/?Model=Lesson_Content', {
+export async function fetchStudentEnrollment(email: string): Promise<StudentEnrollment | null> {
+  const payload = await request<unknown>('/api/get-data/?model=Student_Enrollment', {
     method: 'GET',
     headers: {
-      Model: 'Lesson_Content',
-      // model: 'Lesson_Content',
+      model: 'Student_Enrollment',
+      filters: JSON.stringify({ email }),
     },
   });
 
-  const source = Array.isArray(payload)
-    ? payload
-    : isRecord(payload) && isRecord(payload.data) && Array.isArray(payload.data.rows)
-      ? payload.data.rows
-      : isRecord(payload) && Array.isArray(payload.data)
-        ? payload.data
-        : isRecord(payload) && Array.isArray(payload.results)
-          ? payload.results
-          : [];
+  const enrollments = extractRows(payload)
+    .filter(isRecord)
+    .map((item) => toStudentEnrollment(item))
+    .filter((item): item is StudentEnrollment => item !== null);
 
-  return source
+  return enrollments[0] ?? null;
+}
+
+export async function fetchLessons(): Promise<LessonContent[]> {
+  const payload = await request<unknown>('/api/get-data/?model=Lesson_Content', {
+    method: 'GET',
+    headers: {
+      model: 'Lesson_Content',
+    },
+  });
+
+  return extractRows(payload)
     .filter(isRecord)
     .map((item) => toLesson(item))
     .filter((item): item is LessonContent => item !== null);
 }
 
 export async function fetchAssignments(): Promise<Assignment[]> {
-  const payload = await request<unknown>('/api/get-data/?Model=Assignment', {
+  const payload = await request<unknown>('/api/get-data/?model=Assignment', {
     method: 'GET',
     headers: {
-      Model: 'Assignment',
-      // model: 'Assignment',
+      model: 'Assignment',
     },
   });
 
-  const source = Array.isArray(payload)
-    ? payload
-    : isRecord(payload) && isRecord(payload.data) && Array.isArray(payload.data.rows)
-      ? payload.data.rows
-      : isRecord(payload) && Array.isArray(payload.data)
-        ? payload.data
-        : isRecord(payload) && Array.isArray(payload.results)
-          ? payload.results
-          : [];
-
-  return source
+  return extractRows(payload)
     .filter(isRecord)
     .map((item) => toAssignment(item))
     .filter((item): item is Assignment => item !== null);
@@ -414,18 +525,13 @@ export async function submitEnrollment(payload: EnrollmentPayload): Promise<unkn
     method: 'POST',
     headers: {
       Model: 'Student_Enrollment',
-      // model: 'Student_Enrollment',
     },
     body: JSON.stringify({
-      
-        
-    
-        first_name: payload.firstName,
-        last_name: payload.lastName,
-        email: payload.email,
-        course: payload.course.id ?? payload.course.name,
-        description: payload.description,
-    
+      first_name: payload.firstName,
+      last_name: payload.lastName,
+      email: payload.email,
+      course: payload.course.id ?? payload.course.name,
+      description: payload.description,
     }),
   });
 }

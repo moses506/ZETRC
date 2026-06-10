@@ -36,7 +36,13 @@ function Login({ onBackHome, onLogin, onGoRegister, notice }: LoginProps) {
         password,
       });
 
-      localStorage.setItem('zetrcAuthSession', JSON.stringify(response));
+      localStorage.setItem(
+        'zetrcAuthSession',
+        JSON.stringify({
+          response,
+          login_email: email.trim(),
+        }),
+      );
       localStorage.setItem('zetrcRememberUser', String(keepSignedIn));
       onLogin(response);
     } catch (error) {
@@ -107,9 +113,9 @@ function Login({ onBackHome, onLogin, onGoRegister, notice }: LoginProps) {
             <div className="brand">
               <div className="brand-icon">
                 <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-                  <rect width="22" height="22" rx="6" fill="#071a14" />
-                  <path d="M11 3 L19 11 L11 19 L3 11 Z" stroke="#2dd4aa" strokeWidth="1.5" fill="none" strokeLinejoin="round"/>
-                  <circle cx="11" cy="11" r="2.5" fill="#2dd4aa" />
+                  <rect width="22" height="22" rx="6" fill="#032b14" />
+                  <path d="M11 3 L19 11 L11 19 L3 11 Z" stroke="#d9a51f" strokeWidth="1.5" fill="none" strokeLinejoin="round"/>
+                  <circle cx="11" cy="11" r="2.5" fill="#d9a51f" />
                 </svg>
               </div>
               <div className="brand-text">
