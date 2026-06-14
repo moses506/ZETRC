@@ -1,4 +1,4 @@
-const API_BASE_URL = '/zetrc-api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/zetrc-api';
 const API_PUBLIC_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || 'https://twisted-disparity-tingly.ngrok-free.dev';
 type ApiRecord = Record<string, unknown>;
