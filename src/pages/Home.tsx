@@ -6,6 +6,7 @@ import kundaLesson01 from "../assets/kunda_lesson-01.jpeg";
 import kundaLesson02 from "../assets/kunda_lesson -02.jpeg";
 import kundaLesson03 from "../assets/kunda_lesson-03.jpeg";
 import { useLanguage } from "../i18n/LanguageContext";
+import useWindowWidth from "../hooks/useWindowWidth";
 
 type HomeProps = {
   onJoinPilot: () => void;
@@ -551,6 +552,7 @@ const INTERVAL = 5500;
 
 function Home({ onJoinPilot, onRequestProposal }: HomeProps) {
   const { t, tList } = useLanguage();
+  const width = useWindowWidth();
   const [current, setCurrent] = useState(0);
   const [progress, setProgress] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -585,6 +587,94 @@ function Home({ onJoinPilot, onRequestProposal }: HomeProps) {
       sub: t("hero3Sub"),
     },
   ];
+  const isTablet = width <= 1024;
+  const isMobile = width <= 640;
+  const heroWrapStyle: CSSProperties = {
+    ...S.heroWrap,
+    height: isMobile ? "auto" : S.heroWrap.height,
+    minHeight: isMobile ? 620 : isTablet ? 600 : S.heroWrap.minHeight,
+  };
+  const slideContentStyle: CSSProperties = {
+    ...S.slideContent,
+    gridTemplateColumns: isTablet ? "1fr" : S.slideContent.gridTemplateColumns,
+    alignItems: isTablet ? "flex-end" : S.slideContent.alignItems,
+    gap: isTablet ? "1.5rem" : S.slideContent.gap,
+    padding: isMobile ? "0 1rem 5rem" : isTablet ? "0 2rem 4rem" : S.slideContent.padding,
+  };
+  const slideHeadlineStyle: CSSProperties = {
+    ...S.slideHeadline,
+    fontSize: isMobile ? "clamp(2.1rem, 12vw, 3rem)" : S.slideHeadline.fontSize,
+    maxWidth: isMobile ? "100%" : S.slideHeadline.maxWidth,
+  };
+  const slideSubStyle: CSSProperties = {
+    ...S.slideSub,
+    fontSize: isMobile ? "0.98rem" : S.slideSub.fontSize,
+    maxWidth: isMobile ? "100%" : S.slideSub.maxWidth,
+  };
+  const slideBtnsStyle: CSSProperties = {
+    ...S.slideBtns,
+    flexDirection: isMobile ? "column" : "row",
+  };
+  const heroButtonStyle: CSSProperties = {
+    width: isMobile ? "100%" : undefined,
+  };
+  const statsPanelStyle: CSSProperties = {
+    ...S.statsPanel,
+    display: isMobile ? "none" : "grid",
+    gridTemplateColumns: isTablet ? "repeat(3, minmax(0, 1fr))" : undefined,
+    alignItems: isTablet ? "stretch" : S.statsPanel.alignItems,
+    width: isTablet ? "100%" : undefined,
+    animation: "slideFadeIn 0.9s ease forwards",
+  };
+  const statCardStyle: CSSProperties = {
+    ...S.statCard,
+    minWidth: isTablet ? 0 : S.statCard.minWidth,
+    textAlign: isTablet ? "left" : S.statCard.textAlign,
+  };
+  const sectionPadding = isMobile ? "3rem 1rem" : isTablet ? "4rem 1.5rem" : undefined;
+  const servicesStyle: CSSProperties = {
+    ...S.services,
+    padding: sectionPadding ?? S.services.padding,
+  };
+  const servicesGridStyle: CSSProperties = {
+    ...S.servicesGrid,
+    gridTemplateColumns: isMobile ? "1fr" : isTablet ? "repeat(2, minmax(0, 1fr))" : S.servicesGrid.gridTemplateColumns,
+  };
+  const sectionTitleStyle: CSSProperties = {
+    ...S.sectionTitle,
+    fontSize: isMobile ? "2rem" : S.sectionTitle.fontSize,
+  };
+  const whyStripStyle: CSSProperties = {
+    ...S.whyStrip,
+    padding: isMobile ? "3rem 1rem" : isTablet ? "4rem 1.5rem" : S.whyStrip.padding,
+  };
+  const whyInnerStyle: CSSProperties = {
+    ...S.whyInner,
+    gridTemplateColumns: isTablet ? "1fr" : S.whyInner.gridTemplateColumns,
+    gap: isMobile ? "2rem" : isTablet ? "3rem" : S.whyInner.gap,
+  };
+  const whyItemsStyle: CSSProperties = {
+    ...S.whyItems,
+    gridTemplateColumns: isMobile ? "1fr" : S.whyItems.gridTemplateColumns,
+  };
+  const contactStyle: CSSProperties = {
+    ...S.contact,
+    padding: sectionPadding ?? S.contact.padding,
+  };
+  const contactInnerStyle: CSSProperties = {
+    ...S.contactInner,
+    gridTemplateColumns: isTablet ? "1fr" : S.contactInner.gridTemplateColumns,
+    gap: isMobile ? "2rem" : isTablet ? "3rem" : S.contactInner.gap,
+  };
+  const formRowStyle: CSSProperties = {
+    ...S.formRow,
+    gridTemplateColumns: isMobile ? "1fr" : S.formRow.gridTemplateColumns,
+  };
+  const formCardStyle: CSSProperties = {
+    ...S.formCard,
+    padding: isMobile ? "1.25rem" : S.formCard.padding,
+    borderRadius: isMobile ? 18 : S.formCard.borderRadius,
+  };
 
   useEffect(() => {
     const el = document.createElement("style");
@@ -644,7 +734,7 @@ function Home({ onJoinPilot, onRequestProposal }: HomeProps) {
       
 
       {/* ── HERO SLIDER ── */}
-      <section style={S.heroWrap} id="home">
+      <section style={heroWrapStyle} id="home">
 
         {/* Green progress bar at top */}
         <div style={{ ...S.progressBar, width: `${progress}%` }} />
@@ -674,36 +764,36 @@ function Home({ onJoinPilot, onRequestProposal }: HomeProps) {
         ))}
 
         {/* Slide text content — re-mounts on current change to retrigger animation */}
-        <div style={S.slideContent} key={`content-${current}`}>
+        <div style={slideContentStyle} key={`content-${current}`}>
           {/* Left: headline + buttons */}
           <div style={{ animation: "slideFadeIn 0.7s ease forwards" }}>
             <div style={S.slideTag}>
               <span style={S.slideTagDot} />
               {slides[current].tag}
             </div>
-            <h1 style={S.slideHeadline}>
+            <h1 style={slideHeadlineStyle}>
               {slides[current].headline}{" "}
               <em style={S.slideAccent}>{slides[current].accent}</em>
             </h1>
-            <p style={S.slideSub}>{slides[current].sub}</p>
-            <div style={S.slideBtns}>
-              <button style={S.btnWhite} onClick={onRequestProposal}>
+            <p style={slideSubStyle}>{slides[current].sub}</p>
+            <div style={slideBtnsStyle}>
+              <button style={{ ...S.btnWhite, ...heroButtonStyle }} onClick={onRequestProposal}>
                 {t("requestProposalArrow")}
               </button>
-              <button style={S.btnGhost} onClick={onJoinPilot}>
+              <button style={{ ...S.btnGhost, ...heroButtonStyle }} onClick={onJoinPilot}>
                 {t("joinPilotTraining")}
               </button>
             </div>
           </div>
 
           {/* Right: frosted glass stat cards */}
-          <div style={{ ...S.statsPanel, animation: "slideFadeIn 0.9s ease forwards" }}>
+          <div style={statsPanelStyle}>
             {[
               { n: "200+", l: t("farmersTrained") },
               { n: "6", l: t("provincesReached") },
               { n: "3", l: t("partnerOrgs") },
             ].map((s) => (
-              <div key={s.l} style={S.statCard}>
+              <div key={s.l} style={statCardStyle}>
                 <div style={S.statCardNum}>{s.n}</div>
                 <div style={S.statCardLabel}>{s.l}</div>
               </div>
@@ -712,10 +802,10 @@ function Home({ onJoinPilot, onRequestProposal }: HomeProps) {
         </div>
 
         {/* Prev / Next arrows */}
-        <button onClick={prev} style={{ ...S.arrow, left: 24 }} aria-label="Previous slide">
+        <button onClick={prev} style={{ ...S.arrow, left: isMobile ? 12 : 24, width: isMobile ? 42 : 48, height: isMobile ? 42 : 48 }} aria-label="Previous slide">
           ‹
         </button>
-        <button onClick={next} style={{ ...S.arrow, right: 24 }} aria-label="Next slide">
+        <button onClick={next} style={{ ...S.arrow, right: isMobile ? 12 : 24, width: isMobile ? 42 : 48, height: isMobile ? 42 : 48 }} aria-label="Next slide">
           ›
         </button>
 
@@ -732,10 +822,10 @@ function Home({ onJoinPilot, onRequestProposal }: HomeProps) {
       </section>
 
       {/* ── SERVICES ── */}
-      <section style={S.services} id="services">
+      <section style={servicesStyle} id="services">
         <div style={S.servicesHeader}>
           <div style={S.sectionLabel}>{t("whatWeOffer")}</div>
-          <div style={S.sectionTitle}>
+          <div style={sectionTitleStyle}>
             {t("servicesTitle")}
           </div>
           <p style={S.servicesSubtitle}>
@@ -743,7 +833,7 @@ function Home({ onJoinPilot, onRequestProposal }: HomeProps) {
           </p>
         </div>
 
-        <div style={S.servicesGrid}>
+        <div style={servicesGridStyle}>
           <div style={S.cardLight}>
             <div style={{ ...S.serviceIcon, ...S.iconGreenBg }}>👥</div>
             <div style={S.serviceTitle}>{t("whoThisIsFor")}</div>
@@ -788,8 +878,8 @@ function Home({ onJoinPilot, onRequestProposal }: HomeProps) {
       </section>
 
       {/* ── WHY ZETRC ── */}
-      <section style={S.whyStrip}>
-        <div style={S.whyInner}>
+      <section style={whyStripStyle}>
+        <div style={whyInnerStyle}>
           <div>
             <div style={S.whySectionLabel}>{t("whyZetrc")}</div>
             <div style={S.whySectionTitle}>
@@ -799,7 +889,7 @@ function Home({ onJoinPilot, onRequestProposal }: HomeProps) {
               {t("whyDesc")}
             </p>
           </div>
-          <div style={S.whyItems}>
+          <div style={whyItemsStyle}>
             {tList("whyItems").map((entry, index) => {
               const [title, desc] = entry.split("|");
               const icons = ["📍", "📊", "🌿", "🤝"];
@@ -817,11 +907,11 @@ function Home({ onJoinPilot, onRequestProposal }: HomeProps) {
       </section>
 
       {/* ── CONTACT ── */}
-      <section style={S.contact} id="contact">
-        <div style={S.contactInner}>
+      <section style={contactStyle} id="contact">
+        <div style={contactInnerStyle}>
           <div>
             <div style={S.sectionLabel}>{t("getInTouch")}</div>
-            <div style={{ ...S.sectionTitle, fontSize: "2.4rem", marginBottom: "1rem" }}>
+            <div style={{ ...sectionTitleStyle, marginBottom: "1rem" }}>
               {t("workWithZetrc")}
             </div>
             <p style={S.contactDesc}>
@@ -845,11 +935,11 @@ function Home({ onJoinPilot, onRequestProposal }: HomeProps) {
             <button style={S.btnPrimary}>{t("contactWhatsapp")}</button>
           </div>
 
-          <div style={S.formCard}>
+          <div style={formCardStyle}>
             <div style={S.formTitle}>{t("requestProposal")}</div>
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               <input type="text" placeholder={t("orgFullName")} style={S.input} />
-              <div style={S.formRow}>
+              <div style={formRowStyle}>
                 <input type="email" placeholder={t("emailAddress")} style={S.input} />
                 <input type="tel" placeholder={t("phoneNumber")} style={S.input} />
               </div>

@@ -38,6 +38,14 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+html,
+body,
+#root {
+  width: 100%;
+  min-width: 0;
+  overflow-x: hidden;
+}
+
 button,
 input,
 select,
@@ -144,6 +152,13 @@ textarea {
   transition: background 0.2s, box-shadow 0.2s;
 }
 .btn-teal:hover { background: var(--teal-dim); box-shadow: 0 0 20px var(--teal-glow); }
+
+.header-ctas {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
 
 .btn-ghost-sm {
   background: transparent; border: 1px solid var(--glass-border);
@@ -1775,6 +1790,32 @@ textarea {
 
 /* ─── RESPONSIVE ─────────────────────────────────── */
 @media (max-width: 1024px) {
+  .header-inner {
+    height: auto;
+    min-height: 66px;
+    flex-wrap: wrap;
+    gap: 0.9rem;
+    padding: 0.8rem 1.25rem;
+  }
+
+  .main-nav {
+    order: 3;
+    width: 100%;
+    justify-content: flex-start;
+    gap: 1rem;
+    overflow-x: auto;
+    padding: 0.25rem 0 0.15rem;
+    scrollbar-width: none;
+  }
+
+  .main-nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .header-ctas {
+    margin-left: auto;
+  }
+
   .hero-inner { grid-template-columns: 1fr; min-height: auto; gap: 3rem; padding: 3rem 1.5rem; }
   .hero-p { max-width: 100%; }
   .info-strip { grid-template-columns: 1fr; padding: 3rem 1.5rem; }
@@ -1788,12 +1829,72 @@ textarea {
   .training-title { max-width: 14ch; }
 }
 @media (max-width: 640px) {
+  .header-inner {
+    padding: 0.85rem 1rem;
+    align-items: flex-start;
+  }
+
+  .brand-text {
+    min-width: 0;
+  }
+
+  .brand-sub {
+    max-width: 11rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
   .main-nav { display: none; }
+
+  .header-ctas {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.6rem;
+  }
+
+  .header-ctas .btn-ghost,
+  .header-ctas .btn-teal {
+    width: 100%;
+    min-height: 42px;
+  }
+
+  .language-switcher {
+    right: 0.75rem;
+    bottom: 0.75rem;
+    max-width: calc(100vw - 1.5rem);
+  }
+
+  .language-switcher label {
+    display: none;
+  }
+
   .mini-cards { grid-template-columns: 1fr; }
   .hero-stats { gap: 1.5rem; }
   .footer-inner { grid-template-columns: 1fr; }
+  .app-footer { padding: 3rem 1rem 1.5rem; }
+  .footer-cta-box { padding: 1.1rem; }
   .form-grid { grid-template-columns: 1fr; }
   .span-2 { grid-column: 1; }
+  .login-shell {
+    padding: 1.25rem 1rem 2.5rem;
+  }
+
+  .login-card,
+  .login-feature-panel {
+    padding: 1.25rem;
+  }
+
+  .login-card-copy h2 {
+    font-size: 1.55rem;
+  }
+
+  .auth-switch,
+  .login-footer-note {
+    align-items: flex-start;
+  }
+
   .training-band,
   .training-content { padding: 1rem; }
   .training-hero-inner { padding: 3.25rem 1rem 2rem; }
@@ -1804,10 +1905,43 @@ textarea {
   .training-program-card,
   .training-benefits-card { padding: 1.25rem; border-radius: 22px; }
   .training-page-view { padding: 1rem; }
-  .training-hero-card { min-height: auto; border-radius: 22px; }
+  .training-hero-card { min-height: auto; border-radius: 22px; padding: 1rem; }
   .training-hero-copy h2 { font-size: 2.55rem; }
   .training-meta-row,
   .training-snapshot-grid { grid-template-columns: 1fr; }
   .training-track-row { grid-template-columns: 1fr; }
   .training-track-time { justify-content: flex-start; padding: 0 1rem; }
+  .training-snapshot-header,
+  .training-snapshot-footer,
+  .training-page-view .card-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 420px) {
+  .brand-mark {
+    font-size: 0.98rem;
+  }
+
+  .brand-icon {
+    width: 34px;
+    height: 34px;
+  }
+
+  .btn-ghost,
+  .btn-teal,
+  .btn-primary-top,
+  .btn-ghost-top {
+    width: 100%;
+    text-align: center;
+  }
+
+  .login-title {
+    font-size: 2.15rem;
+  }
+
+  .training-hero-copy h2 {
+    font-size: 2.15rem;
+  }
 }
