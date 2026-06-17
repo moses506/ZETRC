@@ -168,6 +168,7 @@ const en: TranslationMap = {
   useAccess: 'Use your pilot access details to open your training dashboard.',
   password: 'Password',
   enterPassword: 'Enter your password',
+  showPassword: 'Show password',
   keepSignedIn: 'Keep me signed in',
   needHelp: 'Need help?',
   signingIn: 'Signing in...',

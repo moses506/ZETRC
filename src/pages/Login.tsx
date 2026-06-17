@@ -19,6 +19,7 @@ function Login({ onBackHome, onLogin, onGoRegister, notice }: LoginProps) {
   const { t, tList } = useLanguage();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [keepSignedIn, setKeepSignedIn] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -165,7 +166,7 @@ function Login({ onBackHome, onLogin, onGoRegister, notice }: LoginProps) {
             <label className="login-field">
               <span>{t('password')}</span>
               <input
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 placeholder={t('enterPassword')}
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
@@ -174,6 +175,18 @@ function Login({ onBackHome, onLogin, onGoRegister, notice }: LoginProps) {
                 disabled={isSubmitting}
               />
             </label>
+
+            <div className="login-password-toggle">
+              <label className="login-remember">
+                <input
+                  type="checkbox"
+                  checked={showPassword}
+                  onChange={(event) => setShowPassword(event.target.checked)}
+                  disabled={isSubmitting}
+                />
+                <span>{t('showPassword')}</span>
+              </label>
+            </div>
 
             <div className="login-row">
               <label className="login-remember">

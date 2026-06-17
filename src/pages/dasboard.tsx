@@ -466,19 +466,12 @@ function DashboardOverview({
   const [savedAudioProgress, setSavedAudioProgress] = useState<Record<string, AudioProgressEntry>>(
     () => readAudioProgress(),
   );
-  const displayModules = liveModules.length > 0 ? liveModules : modules;
+  const displayModules = liveModules;
   const totalLessons = lessons.length;
-  const totalModules =
-    [...new Set(lessons.map((lesson) => lesson.module).filter(Boolean))].length ||
-    displayModules.length;
+  const moduleNames = [...new Set(lessons.map((lesson) => lesson.module || lesson.name).filter(Boolean))];
+  const totalModules = moduleNames.length;
   const audioReadyCount = lessons.filter((lesson) => lesson.audioFiles).length;
-  const attachmentCount = lessons.filter((lesson) => lesson.attachments).length;
   const keyPointCount = lessons.reduce((total, lesson) => total + lesson.keyPoints.length, 0);
-  const resourceReadyLessons = lessons.filter(
-    (lesson) => lesson.audioFiles || lesson.attachments,
-  ).length;
-  const resourceCoveragePct =
-    totalLessons > 0 ? Math.round((resourceReadyLessons / totalLessons) * 100) : 0;
   const getAudioProgressKey = (lesson: { name: string; module: string; audioFiles: string }) => {
     const moduleName = lesson.module || lesson.name;
     const href = resolveApiAssetUrl(lesson.audioFiles);
@@ -521,31 +514,31 @@ function DashboardOverview({
       <div className="stats-grid">
         {[
           {
-            label: 'Live lessons',
-            value: String(totalLessons),
-            fill: totalLessons > 0 ? 100 : 0,
-            sub: `${totalModules} module${totalModules === 1 ? '' : 's'} available`,
+            label: 'Lesson progress',
+            value: `${lessonCoveragePct}%`,
+            fill: lessonCoveragePct,
+            sub: `${completedLessonCount} of ${totalLessons} lesson${totalLessons === 1 ? '' : 's'} completed`,
             color: 'green',
           },
           {
-            label: 'Audio ready',
-            value: String(audioReadyCount),
-            fill: totalLessons > 0 ? (audioReadyCount / totalLessons) * 100 : 0,
-            sub: `${Math.max(totalLessons - audioReadyCount, 0)} lesson${Math.max(totalLessons - audioReadyCount, 0) === 1 ? '' : 's'} without audio`,
+            label: 'Modules',
+            value: String(totalModules),
+            fill: totalModules > 0 ? 100 : 0,
+            sub: `${totalModules} module${totalModules === 1 ? '' : 's'} from lesson API`,
             color: 'neutral',
           },
           {
-            label: 'Attachments',
-            value: String(attachmentCount),
-            fill: totalLessons > 0 ? (attachmentCount / totalLessons) * 100 : 0,
+            label: 'Lessons',
+            value: String(totalLessons),
+            fill: totalLessons > 0 ? 100 : 0,
             sub: `${keyPointCount} key point${keyPointCount === 1 ? '' : 's'} across lessons`,
             color: 'green',
           },
           {
-            label: 'Media coverage',
-            value: `${resourceCoveragePct}%`,
-            fill: resourceCoveragePct,
-            sub: `${resourceReadyLessons} of ${totalLessons} lessons ready`,
+            label: 'Audios',
+            value: String(audioReadyCount),
+            fill: totalLessons > 0 ? Math.round((audioReadyCount / totalLessons) * 100) : 0,
+            sub: `${audioReadyCount} of ${totalLessons} lesson${totalLessons === 1 ? '' : 's'} have audio`,
             color: 'neutral',
           },
         ].map((s) => (
@@ -567,7 +560,7 @@ function DashboardOverview({
             <span className="card-link">View all</span>
           </div>
           <div className="module-list">
-            {displayModules.map((m) => (
+            {displayModules.length > 0 ? displayModules.map((m) => (
               <div className={`module-row ${m.status === 'active' ? 'module-active' : ''}`} key={m.num}>
                 <ModuleNumber num={m.num} status={m.status} />
                 <div className="mod-info">
@@ -576,7 +569,9 @@ function DashboardOverview({
                 </div>
                 <ModuleStatusBadge status={m.status} />
               </div>
-            ))}
+            )) : (
+              <div className="training-audio-note">No modules have been returned by the lesson API yet.</div>
+            )}
           </div>
         </div>
 
@@ -591,11 +586,11 @@ function DashboardOverview({
           <div className="mini-stats">
             <div className="mini-stat">
               <div className="mini-val">{completedLessonCount}</div>
-              <div className="mini-lbl">Done</div>
+              <div className="mini-lbl">Lessons done</div>
             </div>
             <div className="mini-stat">
-              <div className="mini-val">{attachmentCount}</div>
-              <div className="mini-lbl">Files</div>
+              <div className="mini-val">{audioReadyCount}</div>
+              <div className="mini-lbl">Audios</div>
             </div>
           </div>
         </div>
