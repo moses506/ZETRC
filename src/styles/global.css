@@ -595,11 +595,6 @@ textarea {
   gap: 1rem;
 }
 
-.login-password-toggle {
-  display: flex;
-  align-items: center;
-}
-
 .login-remember {
   display: flex;
   align-items: center;
