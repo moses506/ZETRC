@@ -198,6 +198,10 @@ export function getStoredLearnerEnrollment(): LearnerEnrollment | null {
   };
 }
 
+export function hasStoredLearnerSession(): boolean {
+  return isRecord(safeParse('zetrcAuthSession'));
+}
+
 export function clearStoredLearnerData(): void {
   localStorage.removeItem('zetrcAuthSession');
   localStorage.removeItem('zetrcRememberUser');

@@ -47,9 +47,13 @@ html { -webkit-font-smoothing: antialiased; }
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 0;
+  bottom: 0;
+  width: 228px;
   height: 100vh;
+  z-index: 20;
 }
 
 .sb-brand {
@@ -167,6 +171,7 @@ html { -webkit-font-smoothing: antialiased; }
   min-width: 0;
   max-width: 1300px;
   width: 100%;
+  grid-column: 2;
 }
 
 /* Top bar */
@@ -1415,8 +1420,8 @@ html { -webkit-font-smoothing: antialiased; }
 
 @media (max-width: 768px) {
   .dash-wrap    { grid-template-columns: 1fr; }
-  .sidebar      { display: none; }
-  .main-content { padding: 16px; }
+  .sidebar      { display: none; position: static; }
+  .main-content { grid-column: 1; padding: 16px; }
   .stats-grid   { grid-template-columns: 1fr 1fr; }
   .top-actions  { flex-direction: column; }
   .training-meta-row { grid-template-columns: 1fr; }
