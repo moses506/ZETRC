@@ -5,6 +5,11 @@ import { useCallback, useEffect, useRef, useState, type CSSProperties } from "re
 import kundaLesson01 from "../assets/kunda_lesson-01.jpeg";
 import kundaLesson02 from "../assets/kunda_lesson -02.jpeg";
 import kundaLesson03 from "../assets/kunda_lesson-03.jpeg";
+import partnerGcaig from "../assets/partner_gcaig.jpeg";
+import partnerAycca from "../assets/partner_aycca.jpeg";
+import partnerWff from "../assets/partner_wff.jpeg";
+import partnerMastercard from "../assets/partner_mastercard.png";
+import partnerAgreenect from "../assets/partner_agreenect.jpeg";
 import { useLanguage } from "../i18n/LanguageContext";
 import useWindowWidth from "../hooks/useWindowWidth";
 
@@ -263,9 +268,98 @@ const S: Record<string, CSSProperties> = {
     transition: "width 0.1s linear",
   },
 
-  // SERVICES
-  services: { padding: "6rem 5rem", background: "#EFF8E4" },
-  servicesHeader: { textAlign: "center" as const, marginBottom: "3.5rem" },
+  // ABOUT
+  about: { padding: "6rem 5rem", background: "#fff" },
+  aboutInner: { display: "grid", gridTemplateColumns: "0.85fr 1.15fr", gap: "4rem", alignItems: "start" },
+  aboutEyebrow: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 8,
+    background: "#EAF7DE",
+    border: "1px solid #BFE8B4",
+    padding: "6px 16px 6px 10px",
+    borderRadius: 999,
+    marginBottom: 18,
+  },
+  aboutEyebrowDot: {
+    width: 7,
+    height: 7,
+    borderRadius: "50%",
+    background: "#06431F",
+    display: "inline-block",
+    flexShrink: 0,
+  },
+  aboutEyebrowText: {
+    fontSize: 11.5,
+    fontWeight: 700,
+    letterSpacing: "0.1em",
+    color: "#06431F",
+    textTransform: "uppercase" as const,
+  },
+  aboutTitle: {
+    fontFamily: "'Playfair Display', serif",
+    fontSize: "2.5rem",
+    fontWeight: 900,
+    color: "#032B14",
+    lineHeight: 1.18,
+  },
+  aboutTitleAccent: { color: "#06431F", fontStyle: "italic" },
+  aboutAcronym: {
+    marginTop: "1.5rem",
+    fontSize: 13,
+    fontWeight: 600,
+    color: "#5A7A67",
+    letterSpacing: "0.02em",
+  },
+  aboutBody: { display: "flex", flexDirection: "column" as const, gap: "1.4rem" },
+  aboutP: {
+    fontSize: 15,
+    lineHeight: 1.85,
+    color: "#5A7A67",
+    fontWeight: 300,
+  },
+  aboutCallout: {
+    background: "#032B14",
+    borderRadius: 20,
+    padding: "1.75rem 2rem",
+    marginTop: "0.25rem",
+  },
+  aboutCalloutText: {
+    fontFamily: "'Playfair Display', serif",
+    fontStyle: "italic",
+    fontSize: "1.15rem",
+    lineHeight: 1.6,
+    color: "#fff",
+  },
+  aboutCalloutAccent: { color: "#F5C542" },
+
+  audience: { padding: "6rem 5rem", background: "#EFF8E4" },
+  audienceHeader: { textAlign: "left" as const, marginBottom: "3.5rem", maxWidth: 520 },
+  audienceLabelRow: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 18,
+    background: "#FFF3C4",
+    border: "1px solid #F0C84A",
+    padding: "6px 16px 6px 10px",
+    borderRadius: 999,
+  },
+  audienceLabelDot: {
+    width: 7,
+    height: 7,
+    borderRadius: "50%",
+    background: "#06431F",
+    display: "inline-block",
+    flexShrink: 0,
+  },
+  audienceLabel: {
+    fontSize: 11.5,
+    fontWeight: 700,
+    letterSpacing: "0.1em",
+    color: "#6B4A00",
+    textTransform: "uppercase" as const,
+  },
   sectionLabel: {
     fontSize: 11,
     fontWeight: 700,
@@ -282,14 +376,416 @@ const S: Record<string, CSSProperties> = {
     lineHeight: 1.2,
     marginBottom: "1rem",
   },
-  servicesSubtitle: {
-    color: "#5A7A67",
-    maxWidth: 500,
-    margin: "0 auto",
-    fontWeight: 300,
-    fontSize: "1.05rem",
+  audienceTitle: {
+    fontFamily: "'Playfair Display', serif",
+    fontSize: "2.75rem",
+    fontWeight: 900,
+    color: "#032B14",
+    lineHeight: 1.12,
+    marginBottom: "1.25rem",
   },
-  servicesGrid: { display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 20 },
+  audienceTitleAccent: {
+    color: "#06431F",
+    fontStyle: "italic",
+  },
+  audienceSubtitleRow: {
+    display: "flex",
+    gap: 14,
+    alignItems: "flex-start",
+  },
+  audienceSubtitleIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    background: "#EAF7DE",
+    border: "1px solid #BFE8B4",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontSize: 15,
+    flexShrink: 0,
+    marginTop: 2,
+  },
+  audienceSubtitle: {
+    color: "#5A7A67",
+    maxWidth: 400,
+    fontWeight: 300,
+    fontSize: "1.08rem",
+    lineHeight: 1.75,
+  },
+  audienceGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(4,1fr)",
+    gap: 20,
+    maxWidth: 1100,
+    margin: "0 auto",
+  },
+  audienceCard: {
+    background: "#fff",
+    borderRadius: 20,
+    padding: "2rem 1.5rem",
+    border: "1px solid rgba(30,125,69,0.15)",
+    textAlign: "center" as const,
+    display: "flex",
+    flexDirection: "column" as const,
+    alignItems: "center",
+    gap: 14,
+    transition: "transform 0.25s ease, box-shadow 0.25s ease",
+  },
+  audienceIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 16,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontSize: 24,
+    background: "#EAF7DE",
+    border: "1px solid #BFE8B4",
+  },
+  audienceCheck: {
+    width: 22,
+    height: 22,
+    borderRadius: "50%",
+    background: "#06431F",
+    color: "#fff",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontSize: 11,
+    fontWeight: 700,
+    flexShrink: 0,
+  },
+  audienceCardTitle: {
+    fontFamily: "'Playfair Display', serif",
+    fontWeight: 700,
+    fontSize: "1.05rem",
+    color: "#032B14",
+  },
+
+  // ZETRC ACADEMY / SERVICES
+  academySection: { padding: "6rem 5rem", background: "#fff" },
+  academyHeader: { textAlign: "left" as const, marginTop: "4rem", marginBottom: "3rem", maxWidth: 560 },
+  academyEyebrow: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 8,
+    background: "#EAF7DE",
+    border: "1px solid #BFE8B4",
+    padding: "6px 16px 6px 10px",
+    borderRadius: 999,
+    marginBottom: 18,
+  },
+  academyEyebrowDot: {
+    width: 7,
+    height: 7,
+    borderRadius: "50%",
+    background: "#06431F",
+    display: "inline-block",
+    flexShrink: 0,
+  },
+  academyEyebrowText: {
+    fontSize: 11.5,
+    fontWeight: 700,
+    letterSpacing: "0.1em",
+    color: "#06431F",
+    textTransform: "uppercase" as const,
+  },
+  academySectionTitle: {
+    fontFamily: "'Playfair Display', serif",
+    fontSize: "2.6rem",
+    fontWeight: 900,
+    color: "#032B14",
+    lineHeight: 1.15,
+    marginBottom: "0.5rem",
+  },
+  academyNumberBadge: {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    background: "#032B14",
+    color: "#F5C542",
+    fontFamily: "'Playfair Display', serif",
+    fontWeight: 900,
+    fontSize: 16,
+    flexShrink: 0,
+  },
+  academyCard: {
+    background: "#EFF8E4",
+    border: "1px solid #BFE8B4",
+    borderRadius: 28,
+    padding: "3rem",
+    display: "grid",
+    gridTemplateColumns: "1.1fr 1fr",
+    gap: "3rem",
+    alignItems: "start",
+  },
+  academyCardTitleRow: { display: "flex", alignItems: "center", gap: 14, marginBottom: 14 },
+  academyCardTitle: {
+    fontFamily: "'Playfair Display', serif",
+    fontSize: "1.6rem",
+    fontWeight: 800,
+    color: "#032B14",
+  },
+  academyCardTagline: {
+    fontSize: 14.5,
+    fontWeight: 600,
+    color: "#06431F",
+    marginBottom: 14,
+  },
+  academyCardDesc: {
+    fontSize: 14.5,
+    lineHeight: 1.8,
+    color: "#5A7A67",
+    fontWeight: 300,
+    marginBottom: 14,
+  },
+  academyCardIntro: {
+    fontSize: 13.5,
+    fontWeight: 600,
+    color: "#032B14",
+    marginBottom: 14,
+  },
+  academyList: {
+    listStyle: "none",
+    padding: 0,
+    margin: 0,
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: "10px 16px",
+  },
+  academyListItem: {
+    display: "flex",
+    alignItems: "flex-start",
+    gap: 10,
+    fontSize: 13.5,
+    color: "#032B14",
+    fontWeight: 500,
+    lineHeight: 1.5,
+  },
+  academyOutro: {
+    fontSize: 14,
+    lineHeight: 1.8,
+    color: "#5A7A67",
+    fontWeight: 300,
+    background: "#fff",
+    border: "1px solid rgba(30,125,69,0.15)",
+    borderRadius: 18,
+    padding: "1.5rem",
+  },
+  academyOutroLabel: {
+    fontSize: 11,
+    fontWeight: 700,
+    letterSpacing: "0.08em",
+    color: "#06431F",
+    textTransform: "uppercase" as const,
+    marginBottom: 8,
+  },
+
+  // ARTICLES
+  articlesSection: { padding: "6rem 5rem", background: "#032B14" },
+  articlesHeader: { textAlign: "left" as const, marginBottom: "2.5rem", maxWidth: 620 },
+  articlesEyebrow: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 8,
+    background: "#EAF7DE",
+    border: "1px solid #BFE8B4",
+    padding: "6px 16px 6px 10px",
+    borderRadius: 999,
+    marginBottom: 16,
+  },
+  articlesEyebrowDot: {
+    width: 7,
+    height: 7,
+    borderRadius: "50%",
+    background: "#06431F",
+    display: "inline-block",
+    flexShrink: 0,
+  },
+  articlesEyebrowText: {
+    fontSize: 11.5,
+    fontWeight: 700,
+    letterSpacing: "0.1em",
+    color: "#06431F",
+    textTransform: "uppercase" as const,
+  },
+  articlesSectionTitle: {
+    fontFamily: "'Playfair Display', serif",
+    fontSize: "2.5rem",
+    fontWeight: 900,
+    color: "#fff",
+    lineHeight: 1.15,
+    marginBottom: "0.6rem",
+  },
+  articlesSubtitle: {
+    color: "#5A7A67",
+    fontWeight: 300,
+    fontSize: "1.02rem",
+    lineHeight: 1.7,
+  },
+  articlesWriteCard: {
+    background: "#fff",
+    border: "1px solid rgba(30,125,69,0.15)",
+    borderRadius: 22,
+    padding: "2rem",
+    boxShadow: "0 4px 28px rgba(30,125,69,0.06)",
+    marginBottom: "2.5rem",
+  },
+  articlesWriteTitle: {
+    fontFamily: "'Playfair Display', serif",
+    fontWeight: 800,
+    fontSize: "1.2rem",
+    color: "#032B14",
+    marginBottom: 16,
+  },
+  articlesFormRow: { display: "grid", gridTemplateColumns: "2fr 1fr", gap: 12 },
+  articlesUploadRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: 14,
+    marginTop: 14,
+    marginBottom: 18,
+  },
+  articlesUploadLabel: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 8,
+    fontSize: 13.5,
+    fontWeight: 600,
+    color: "#06431F",
+    background: "#EAF7DE",
+    border: "1px solid #BFE8B4",
+    padding: "10px 16px",
+    borderRadius: 999,
+    cursor: "pointer",
+  },
+  articlesUploadPreview: {
+    width: 44,
+    height: 44,
+    borderRadius: 10,
+    objectFit: "cover" as const,
+    border: "1px solid #BFE8B4",
+  },
+  articlesList: { display: "flex", flexDirection: "column" as const, gap: 24 },
+  articleCard: {
+    background: "#fff",
+    border: "1px solid rgba(30,125,69,0.15)",
+    borderRadius: 22,
+    overflow: "hidden",
+  },
+  articleImage: {
+    width: "100%",
+    maxHeight: 320,
+    objectFit: "cover" as const,
+    display: "block",
+  },
+  articleBody: { padding: "1.75rem 2rem 2rem" },
+  articleMeta: {
+    fontSize: 12,
+    fontWeight: 600,
+    color: "#8FAD9A",
+    textTransform: "uppercase" as const,
+    letterSpacing: "0.04em",
+    marginBottom: 8,
+  },
+  articleTitle: {
+    fontFamily: "'Playfair Display', serif",
+    fontWeight: 800,
+    fontSize: "1.4rem",
+    color: "#032B14",
+    marginBottom: 10,
+    lineHeight: 1.3,
+  },
+  articleContent: {
+    fontSize: 14.5,
+    lineHeight: 1.8,
+    color: "#5A7A67",
+    fontWeight: 300,
+    marginBottom: "1.5rem",
+  },
+  reactionsRow: {
+    display: "flex",
+    gap: 8,
+    flexWrap: "wrap" as const,
+    marginBottom: "1.5rem",
+  },
+  reactionBtn: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 6,
+    background: "#F5F9F1",
+    border: "1px solid #E2EFD9",
+    borderRadius: 999,
+    padding: "6px 14px",
+    fontSize: 13.5,
+    fontWeight: 600,
+    color: "#5A7A67",
+    cursor: "pointer",
+    fontFamily: "'DM Sans', sans-serif",
+    transition: "transform 0.15s ease, background 0.15s ease",
+  },
+  reactionBtnActive: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 6,
+    background: "#EAF7DE",
+    border: "1px solid #06431F",
+    borderRadius: 999,
+    padding: "6px 14px",
+    fontSize: 13.5,
+    fontWeight: 700,
+    color: "#06431F",
+    cursor: "pointer",
+    fontFamily: "'DM Sans', sans-serif",
+    transform: "scale(1.05)",
+  },
+  commentsBlock: {
+    borderTop: "1px solid #EAF7DE",
+    paddingTop: "1.25rem",
+    display: "flex",
+    flexDirection: "column" as const,
+    gap: 14,
+  },
+  commentsLabel: {
+    fontSize: 13,
+    fontWeight: 700,
+    color: "#032B14",
+  },
+  commentItem: { display: "flex", gap: 12, alignItems: "flex-start" },
+  commentAvatar: {
+    width: 32,
+    height: 32,
+    borderRadius: "50%",
+    background: "#EAF7DE",
+    border: "1px solid #BFE8B4",
+    color: "#06431F",
+    fontWeight: 700,
+    fontSize: 13,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+  },
+  commentName: { fontSize: 13.5, fontWeight: 700, color: "#032B14" },
+  commentDate: { fontWeight: 400, color: "#8FAD9A", fontSize: 12 },
+  commentText: { fontSize: 13.5, color: "#5A7A67", fontWeight: 400, marginTop: 2, lineHeight: 1.55 },
+  commentForm: { display: "flex", gap: 8, flexWrap: "wrap" as const, marginTop: 4 },
+  commentSubmitBtn: {
+    background: "#032B14",
+    color: "#fff",
+    border: "none",
+    padding: "0 20px",
+    borderRadius: 12,
+    fontSize: 13.5,
+    fontWeight: 600,
+    cursor: "pointer",
+    fontFamily: "'DM Sans', sans-serif",
+  },
+
   cardLight: {
     background: "#fff",
     borderRadius: 20,
@@ -410,10 +906,10 @@ const S: Record<string, CSSProperties> = {
     gap: 8,
   },
 
-  // WHY STRIP
-  whyStrip: { background: "#032B14", padding: "5rem" },
-  whyInner: { display: "grid", gridTemplateColumns: "1fr 2fr", gap: "5rem", alignItems: "center" },
-  whySectionLabel: {
+  // OUR PARTNERS
+  partnersStrip: { background: "#032B14", padding: "5rem" },
+  partnersHeader: { textAlign: "center" as const, marginBottom: "3rem" },
+  partnersLabel: {
     fontSize: 11,
     fontWeight: 700,
     letterSpacing: "0.1em",
@@ -421,24 +917,60 @@ const S: Record<string, CSSProperties> = {
     textTransform: "uppercase" as const,
     marginBottom: 10,
   },
-  whySectionTitle: {
+  partnersTitle: {
     fontFamily: "'Playfair Display', serif",
     fontSize: "2.2rem",
     fontWeight: 900,
     color: "#fff",
     lineHeight: 1.2,
   },
-  whyDesc: { color: "rgba(255,255,255,0.6)", marginTop: 16, fontWeight: 300, fontSize: "1rem", lineHeight: 1.75 },
-  whyItems: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 },
-  whyItem: {
+  partnersDesc: {
+    color: "rgba(255,255,255,0.6)",
+    marginTop: 16,
+    fontWeight: 300,
+    fontSize: "1rem",
+    lineHeight: 1.75,
+    maxWidth: 560,
+    margin: "16px auto 0",
+  },
+  partnersGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))",
+    gap: 20,
+    maxWidth: 1200,
+    margin: "0 auto",
+  },
+  partnerCard: {
     background: "rgba(255,255,255,0.06)",
     border: "1px solid rgba(255,255,255,0.1)",
-    borderRadius: 16,
-    padding: "1.5rem",
+    borderRadius: 18,
+    padding: "2rem 1.5rem",
+    textAlign: "center" as const,
+    display: "flex",
+    flexDirection: "column" as const,
+    alignItems: "center",
+    gap: 14,
   },
-  whyItemIcon: { fontSize: 24, marginBottom: 12 },
-  whyItemTitle: { fontWeight: 600, color: "#fff", fontSize: 15, marginBottom: 6 },
-  whyItemDesc: { fontSize: 13, color: "rgba(255,255,255,0.55)", lineHeight: 1.6, fontWeight: 300 },
+  partnerLogoCircle: {
+    width: 84,
+    height: 84,
+    borderRadius: "50%",
+    background: "#fff",
+    border: "1px solid rgba(255,255,255,0.18)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+    padding: 6,
+  },
+  partnerLogoImg: {
+    width: "100%",
+    height: "100%",
+    objectFit: "contain" as const,
+    borderRadius: "50%",
+  },
+  partnerName: { fontWeight: 600, color: "#fff", fontSize: 15.5 },
+  partnerDesc: { fontSize: 13, color: "rgba(255,255,255,0.55)", lineHeight: 1.6, fontWeight: 300 },
 
   // CONTACT
   contact: { padding: "6rem 5rem", background: "#EAF7DE", borderTop: "1px solid #BFE8B4" },
@@ -550,11 +1082,137 @@ const S: Record<string, CSSProperties> = {
 // ── COMPONENT ────────────────────────────────────────────────────────────────
 const INTERVAL = 5500;
 
+const audienceList = [
+  { icon: "🌾", title: "Small-scale farmers" },
+  { icon: "🌱", title: "Youth in agriculture" },
+  { icon: "🤝", title: "Cooperatives & farmer groups" },
+  { icon: "🏢", title: "NGOs & development organizations" },
+];
+
+type ArticleComment = {
+  id: string;
+  name: string;
+  text: string;
+  date: string;
+};
+
+type Article = {
+  id: string;
+  title: string;
+  author: string;
+  date: string;
+  content: string;
+  image?: string;
+  comments: ArticleComment[];
+  reactions: Record<string, number>;
+};
+
+const REACTION_TYPES: { emoji: string; label: string }[] = [
+  { emoji: "👍", label: "Like" },
+  { emoji: "❤️", label: "Love" },
+  { emoji: "💡", label: "Insightful" },
+  { emoji: "👏", label: "Clap" },
+];
+
+const seedArticles: Article[] = [
+  {
+    id: "seed-1",
+    title: "Why Post-Harvest Loss Is Costing Zambian Farmers More Than They Think",
+    author: "ZETRC Team",
+    date: "Jun 12, 2026",
+    content:
+      "Across our pilot districts, we've seen firsthand how much value is lost between harvest and market. In this piece, we break down the most common causes of post-harvest loss and the simple, low-cost practices that are helping farmers in our training program cut waste and increase income.",
+    comments: [
+      { id: "c1", name: "Mwansa B.", text: "This matches exactly what we're seeing in Mkushi. Would love a follow-up on storage solutions.", date: "Jun 13, 2026" },
+    ],
+    reactions: { "👍": 18, "❤️": 7, "💡": 9, "👏": 4 },
+  },
+  {
+    id: "seed-2",
+    title: "Inside Our First Climate-Smart Agriculture Cohort",
+    author: "ZETRC Team",
+    date: "May 28, 2026",
+    content:
+      "Forty participants, six provinces, one shared goal — building resilience into how Zambia farms. We sat down with three graduates of our first climate-smart agriculture cohort to hear how the training is already changing the way they plan their seasons.",
+    comments: [
+      { id: "c2", name: "Chanda M.", text: "Proud to have been part of this cohort. Already applying the soil moisture techniques on my plot.", date: "May 29, 2026" },
+      { id: "c3", name: "Bwalya K.", text: "Is there a waitlist for the next intake?", date: "May 30, 2026" },
+    ],
+    reactions: { "👍": 24, "❤️": 12, "💡": 6, "👏": 11 },
+  },
+  {
+    id: "seed-3",
+    title: "Youth, Agribusiness, and the Case for Starting Small",
+    author: "ZETRC Team",
+    date: "May 14, 2026",
+    content:
+      "Not every agribusiness needs to start big. In this article, we look at how some of our youngest trainees turned small demonstration plots into viable side incomes — and what that means for youth employment across rural Zambia.",
+    comments: [],
+    reactions: { "👍": 9, "❤️": 3, "💡": 5, "👏": 2 },
+  },
+];
+
+
+const partnersList = [
+  { logo: partnerGcaig, name: "Global Center on AI Governance", desc: "Exploring how responsible AI and data practices can support smarter agriculture." },
+  { logo: partnerAycca, name: "Alliance for Youth in Climate Change Action (AYCCA)", desc: "Mobilizing young people across Zambia to lead on climate-smart agriculture." },
+  { logo: partnerWff, name: "World Food Forum — Powered by Global Youth", desc: "Connecting ZETRC's work to a global youth movement for healthy diets and a healthy planet." },
+  { logo: partnerMastercard, name: "Mastercard Foundation", desc: "Supporting economic opportunity for young people through skills and enterprise development." },
+  { logo: partnerAgreenect, name: "AgreeNect", desc: "Connecting farmers and agribusinesses through digital tools and shared agricultural knowledge." },
+];
+
 function Home({ onJoinPilot, onRequestProposal }: HomeProps) {
-  const { t, tList } = useLanguage();
+  const { t } = useLanguage();
   const width = useWindowWidth();
   const [current, setCurrent] = useState(0);
   const [progress, setProgress] = useState(0);
+  const [articles, setArticles] = useState<Article[]>(seedArticles);
+  const [commentDrafts, setCommentDrafts] = useState<Record<string, { name: string; text: string }>>({});
+  const [myReactions, setMyReactions] = useState<Record<string, string | null>>({});
+
+  const handleToggleReaction = (articleId: string, emoji: string) => {
+    setArticles((prev) =>
+      prev.map((a) => {
+        if (a.id !== articleId) return a;
+        const current = myReactions[articleId];
+        const reactions = { ...a.reactions };
+        if (current === emoji) {
+          reactions[emoji] = Math.max(0, (reactions[emoji] || 0) - 1);
+        } else {
+          if (current) reactions[current] = Math.max(0, (reactions[current] || 0) - 1);
+          reactions[emoji] = (reactions[emoji] || 0) + 1;
+        }
+        return { ...a, reactions };
+      })
+    );
+    setMyReactions((prev) => ({
+      ...prev,
+      [articleId]: prev[articleId] === emoji ? null : emoji,
+    }));
+  };
+
+  const updateCommentDraft = (articleId: string, field: "name" | "text", value: string) => {
+    setCommentDrafts((prev) => ({
+      ...prev,
+      [articleId]: { name: prev[articleId]?.name || "", text: prev[articleId]?.text || "", [field]: value },
+    }));
+  };
+
+  const handleAddComment = (articleId: string) => {
+    const draft = commentDrafts[articleId];
+    if (!draft?.text?.trim()) return;
+    const newComment: ArticleComment = {
+      id: `c-${Date.now()}`,
+      name: draft.name.trim() || "Anonymous",
+      text: draft.text.trim(),
+      date: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
+    };
+    setArticles((prev) =>
+      prev.map((a) => (a.id === articleId ? { ...a, comments: [...a.comments, newComment] } : a))
+    );
+    setCommentDrafts((prev) => ({ ...prev, [articleId]: { name: draft.name, text: "" } }));
+  };
+
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const progressRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const styleRef = useRef<HTMLStyleElement | null>(null);
@@ -632,30 +1290,42 @@ function Home({ onJoinPilot, onRequestProposal }: HomeProps) {
     textAlign: isTablet ? "left" : S.statCard.textAlign,
   };
   const sectionPadding = isMobile ? "3rem 1rem" : isTablet ? "4rem 1.5rem" : undefined;
-  const servicesStyle: CSSProperties = {
-    ...S.services,
-    padding: sectionPadding ?? S.services.padding,
+  const audienceStyle: CSSProperties = {
+    ...S.audience,
+    padding: sectionPadding ?? S.audience.padding,
   };
-  const servicesGridStyle: CSSProperties = {
-    ...S.servicesGrid,
-    gridTemplateColumns: isMobile ? "1fr" : isTablet ? "repeat(2, minmax(0, 1fr))" : S.servicesGrid.gridTemplateColumns,
+  const aboutStyle: CSSProperties = {
+    ...S.about,
+    padding: sectionPadding ?? S.about.padding,
+  };
+  const articlesSectionStyle: CSSProperties = {
+    ...S.articlesSection,
+    padding: sectionPadding ?? S.articlesSection.padding,
+  };
+  const aboutInnerStyle: CSSProperties = {
+    ...S.aboutInner,
+    gridTemplateColumns: isTablet ? "1fr" : S.aboutInner.gridTemplateColumns,
+    gap: isMobile ? "2rem" : isTablet ? "2.5rem" : S.aboutInner.gap,
+  };
+  const aboutTitleStyle: CSSProperties = {
+    ...S.aboutTitle,
+    fontSize: isMobile ? "2rem" : S.aboutTitle.fontSize,
+  };
+  const audienceGridStyle: CSSProperties = {
+    ...S.audienceGrid,
+    gridTemplateColumns: isMobile ? "1fr" : isTablet ? "repeat(2, minmax(0, 1fr))" : S.audienceGrid.gridTemplateColumns,
   };
   const sectionTitleStyle: CSSProperties = {
     ...S.sectionTitle,
     fontSize: isMobile ? "2rem" : S.sectionTitle.fontSize,
   };
-  const whyStripStyle: CSSProperties = {
-    ...S.whyStrip,
-    padding: isMobile ? "3rem 1rem" : isTablet ? "4rem 1.5rem" : S.whyStrip.padding,
+  const partnersStripStyle: CSSProperties = {
+    ...S.partnersStrip,
+    padding: isMobile ? "3rem 1rem" : isTablet ? "4rem 1.5rem" : S.partnersStrip.padding,
   };
-  const whyInnerStyle: CSSProperties = {
-    ...S.whyInner,
-    gridTemplateColumns: isTablet ? "1fr" : S.whyInner.gridTemplateColumns,
-    gap: isMobile ? "2rem" : isTablet ? "3rem" : S.whyInner.gap,
-  };
-  const whyItemsStyle: CSSProperties = {
-    ...S.whyItems,
-    gridTemplateColumns: isMobile ? "1fr" : S.whyItems.gridTemplateColumns,
+  const partnersGridStyle: CSSProperties = {
+    ...S.partnersGrid,
+    gridTemplateColumns: isMobile ? "1fr" : S.partnersGrid.gridTemplateColumns,
   };
   const contactStyle: CSSProperties = {
     ...S.contact,
@@ -821,88 +1491,177 @@ function Home({ onJoinPilot, onRequestProposal }: HomeProps) {
         </div>
       </section>
 
-      {/* ── SERVICES ── */}
-      <section style={servicesStyle} id="services">
-        <div style={S.servicesHeader}>
-          <div style={S.sectionLabel}>{t("whatWeOffer")}</div>
-          <div style={sectionTitleStyle}>
-            {t("servicesTitle")}
-          </div>
-          <p style={S.servicesSubtitle}>
-            {t("servicesSubtitle")}
-          </p>
-        </div>
-
-        <div style={servicesGridStyle}>
-          <div style={S.cardLight}>
-            <div style={{ ...S.serviceIcon, ...S.iconGreenBg }}>👥</div>
-            <div style={S.serviceTitle}>{t("whoThisIsFor")}</div>
-            <ul style={S.serviceList}>
-              {tList("audienceList").map((item) => (
-                <li key={item} style={S.serviceListItem}>
-                  <span style={S.checkBadge}>✓</span>
-                  {item}
-                </li>
-              ))}
-            </ul>
+      {/* ── ABOUT ── */}
+      <section style={aboutStyle} id="about">
+        <div style={aboutInnerStyle}>
+          <div>
+            <div style={S.aboutEyebrow}>
+              <span style={S.aboutEyebrowDot} />
+              <span style={S.aboutEyebrowText}>About Us</span>
+            </div>
+            <div style={aboutTitleStyle}>
+              Zambia Environmental Training and{" "}
+              <span style={S.aboutTitleAccent}>Research Centre</span>
+            </div>
+            <div style={S.aboutAcronym}>Known as ZETRC</div>
           </div>
 
-          <div style={S.cardPale} id="academy">
-            <div style={{ ...S.serviceIcon, ...S.iconGoldBg }}>🎓</div>
-            <div style={S.serviceTitle}>ZETRC Academy</div>
-            <div style={S.serviceDesc}>
-              {t("academyDesc")}
+          <div style={S.aboutBody}>
+            <p style={S.aboutP}>
+              ZETRC is a youth-led training, research, and innovation institution committed to building the next generation of leaders, entrepreneurs, and professionals in agriculture, climate resilience, environmental sustainability, and social development.
+            </p>
+            <p style={S.aboutP}>
+              We believe that young people are not only beneficiaries of development but also powerful drivers of innovation and change. Through practical training, applied research, community engagement, and evidence-based solutions, ZETRC equips youth, communities, organisations, and institutions with the knowledge and skills needed to address emerging environmental, agricultural, and socio-economic challenges.
+            </p>
+            <p style={S.aboutP}>
+              Our work focuses on strengthening sustainable livelihoods, promoting climate resilience, advancing inclusive development, and generating practical solutions that contribute to national and global development priorities.
+            </p>
+            <div style={S.aboutCallout}>
+              <p style={S.aboutCalloutText}>
+                By combining learning, research, innovation, and action, ZETRC serves as a platform where <span style={S.aboutCalloutAccent}>knowledge is transformed into impact</span> — where young people are empowered to shape a more resilient and sustainable future.
+              </p>
             </div>
-            <div style={S.academyPills}>
-              {tList("academyPills").map((pill) => (
-                <span key={pill} style={S.pillPurple}>{pill}</span>
-              ))}
-            </div>
-            <a href="#academy" style={S.academyLink}>{t("getEarlyAccess")}</a>
-          </div>
-
-          <div style={S.cardDark}>
-            <div style={{ ...S.serviceIcon, ...S.iconDarkBg }}>🤝</div>
-            <div style={S.serviceTitleWhite}>{t("workWithUs")}</div>
-            <div style={S.serviceDescMuted}>
-              {t("workWithUsDesc")}
-            </div>
-            <button style={S.cardBtnGreen} onClick={onRequestProposal}>
-              {t("requestProposal")}
-            </button>
-            <button style={S.cardBtnPale}>
-              <span>💬</span> {t("whatsappUs")}
-            </button>
           </div>
         </div>
       </section>
 
-      {/* ── WHY ZETRC ── */}
-      <section style={whyStripStyle}>
-        <div style={whyInnerStyle}>
-          <div>
-            <div style={S.whySectionLabel}>{t("whyZetrc")}</div>
-            <div style={S.whySectionTitle}>
-              {t("localContext")}
-            </div>
-            <p style={S.whyDesc}>
-              {t("whyDesc")}
+      {/* ── OUR SERVICES & STRATEGIC AREAS ── */}
+      <section style={audienceStyle} id="services">
+        <div style={S.audienceHeader}>
+          <div style={S.audienceLabelRow}>
+            <span style={S.audienceLabelDot} />
+            <span style={S.audienceLabel}>{t("whatWeOffer")}</span>
+          </div>
+          <div style={S.audienceTitle}>
+            Who <span style={S.audienceTitleAccent}>This Is For</span>
+          </div>
+          <div style={S.audienceSubtitleRow}>
+            <span style={S.audienceSubtitleIcon}>🌍</span>
+            <p style={S.audienceSubtitle}>
+              ZETRC training and resources are built for the people driving agriculture forward in Zambia.
             </p>
           </div>
-          <div style={whyItemsStyle}>
-            {tList("whyItems").map((entry, index) => {
-              const [title, desc] = entry.split("|");
-              const icons = ["📍", "📊", "🌿", "🤝"];
+        </div>
 
-              return (
-              <div key={title} style={S.whyItem}>
-                <div style={S.whyItemIcon}>{icons[index]}</div>
-                <div style={S.whyItemTitle}>{title}</div>
-                <div style={S.whyItemDesc}>{desc}</div>
+        <div style={audienceGridStyle}>
+          {audienceList.map((item) => (
+            <div
+              key={item.title}
+              style={S.audienceCard}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = "translateY(-4px)";
+                e.currentTarget.style.boxShadow = "0 10px 30px rgba(3,43,20,0.1)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = "translateY(0)";
+                e.currentTarget.style.boxShadow = "none";
+              }}
+            >
+              <div style={S.audienceIcon}>{item.icon}</div>
+              <div style={S.audienceCardTitle}>{item.title}</div>
+              <div style={S.audienceCheck}>✓</div>
+            </div>
+          ))}
+        </div>
+
+      </section>
+
+      {/* ── ARTICLES ── */}
+      <section style={articlesSectionStyle}>
+        <div style={S.articlesHeader}>
+          <div style={S.articlesSectionTitle}>Articles</div>
+        </div>
+
+        <div style={S.articlesList}>
+          {articles.map((article) => (
+            <div key={article.id} style={S.articleCard}>
+              {article.image && (
+                <img src={article.image} alt={article.title} style={S.articleImage} />
+              )}
+              <div style={S.articleBody}>
+                <div style={S.articleMeta}>
+                  {article.author} · {article.date}
+                </div>
+                <div style={S.articleTitle}>{article.title}</div>
+                <p style={S.articleContent}>{article.content}</p>
+
+                <div style={S.reactionsRow}>
+                  {REACTION_TYPES.map((r) => {
+                    const active = myReactions[article.id] === r.emoji;
+                    return (
+                      <button
+                        key={r.emoji}
+                        onClick={() => handleToggleReaction(article.id, r.emoji)}
+                        style={active ? S.reactionBtnActive : S.reactionBtn}
+                        title={r.label}
+                      >
+                        <span>{r.emoji}</span>
+                        <span>{article.reactions[r.emoji] || 0}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div style={S.commentsBlock}>
+                  <div style={S.commentsLabel}>
+                    💬 {article.comments.length} {article.comments.length === 1 ? "Comment" : "Comments"}
+                  </div>
+                  {article.comments.map((c) => (
+                    <div key={c.id} style={S.commentItem}>
+                      <div style={S.commentAvatar}>{c.name.charAt(0).toUpperCase()}</div>
+                      <div>
+                        <div style={S.commentName}>
+                          {c.name} <span style={S.commentDate}>{c.date}</span>
+                        </div>
+                        <div style={S.commentText}>{c.text}</div>
+                      </div>
+                    </div>
+                  ))}
+                  <div style={S.commentForm}>
+                    <input
+                      type="text"
+                      placeholder="Your name"
+                      value={commentDrafts[article.id]?.name || ""}
+                      onChange={(e) => updateCommentDraft(article.id, "name", e.target.value)}
+                      style={{ ...S.input, maxWidth: 160 }}
+                    />
+                    <input
+                      type="text"
+                      placeholder="Add a comment..."
+                      value={commentDrafts[article.id]?.text || ""}
+                      onChange={(e) => updateCommentDraft(article.id, "text", e.target.value)}
+                      style={S.input}
+                    />
+                    <button style={S.commentSubmitBtn} onClick={() => handleAddComment(article.id)}>
+                      Post
+                    </button>
+                  </div>
+                </div>
               </div>
-              );
-            })}
-          </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ── OUR PARTNERS ── */}
+      <section style={partnersStripStyle}>
+        <div style={S.partnersHeader}>
+          <div style={S.partnersLabel}>Our Partners</div>
+          <div style={S.partnersTitle}>Grounded in Local Context</div>
+          <p style={S.partnersDesc}>
+            We work hand-in-hand with government, NGO, and academic partners to keep every training relevant, credible, and rooted in the realities of Zambian agriculture.
+          </p>
+        </div>
+        <div style={partnersGridStyle}>
+          {partnersList.map((p) => (
+            <div key={p.name} style={S.partnerCard}>
+              <div style={S.partnerLogoCircle}>
+                <img src={p.logo} alt={p.name} style={S.partnerLogoImg} />
+              </div>
+              <div style={S.partnerName}>{p.name}</div>
+              <div style={S.partnerDesc}>{p.desc}</div>
+            </div>
+          ))}
         </div>
       </section>
 
