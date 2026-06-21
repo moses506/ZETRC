@@ -1,27 +1,59 @@
 import { ReactNode } from 'react';
-import { languages, useLanguage } from '../i18n/LanguageContext';
+import { useLanguage } from '../i18n/LanguageContext';
+import LanguageSwitcher from '../components/LanguageSwitcher';
+import type { PageKey } from '../types/pages';
 import '../styles/global.css';
 
 type RootLayoutProps = {
   children: ReactNode;
   onJoinPilot: () => void;
+  onGoLogin: () => void;
   onGoHome: () => void;
-  onGoTraining: () => void;
+  onGoAbout: () => void;
+  onGoServices: () => void;
+  onGoArticles: () => void;
+  onGoPartners: () => void;
+  onGoContact: () => void;
   onRequestProposal: () => void;
   showChrome?: boolean;
-  currentPage?: 'home' | 'training' | 'login' | 'register' | 'course-enrollment' | 'dashboard';
+  currentPage?: PageKey;
 };
 
 function RootLayout({
   children,
   onJoinPilot,
+  onGoLogin,
   onGoHome,
-  onGoTraining,
+  onGoAbout,
+  onGoServices,
+  onGoArticles,
+  onGoPartners,
+  onGoContact,
   onRequestProposal,
   showChrome = true,
   currentPage = 'home',
 }: RootLayoutProps) {
-  const { language, setLanguage, t } = useLanguage();
+  const { t } = useLanguage();
+
+  const navLink = (page: PageKey, label: string, onClick: () => void) => (
+    <button
+      type="button"
+      className={`nav-link-btn ${currentPage === page ? 'nav-link-active' : ''}`}
+      onClick={onClick}
+    >
+      {label}
+    </button>
+  );
+
+  const footerLinks: { page: PageKey; label: string; onClick: () => void }[] = [
+    { page: 'home', label: t('navHome'), onClick: onGoHome },
+    { page: 'services', label: t('navServices'), onClick: onGoServices },
+    { page: 'partners', label: t('navPartners'), onClick: onGoPartners },
+    { page: 'about', label: t('navAbout'), onClick: onGoAbout },
+    { page: 'articles', label: t('navNewsFeeds'), onClick: onGoArticles },
+    { page: 'login', label: t('logIn'), onClick: onGoLogin },
+    { page: 'contact', label: t('navContact'), onClick: onGoContact },
+  ];
 
   return (
     <div className="app-shell">
@@ -43,48 +75,24 @@ function RootLayout({
             </div>
 
             <nav className="main-nav">
-              <button
-                type="button"
-                className={`nav-link-btn ${currentPage === 'home' ? 'nav-link-active' : ''}`}
-                onClick={onGoHome}
-              >
-                {t('navHome')}
-              </button>
-              <a href="#services">{t('navServices')}</a>
-              <button
-                type="button"
-                className={`nav-link-btn ${currentPage === 'training' ? 'nav-link-active' : ''}`}
-                onClick={onGoTraining}
-              >
-                {t('navTraining')}
-              </button>
-              <a href="#academy">{t('navAcademy')}</a>
-              <a href="#about">{t('navAbout')}</a>
-              <a href="#contact">{t('navContact')}</a>
+              {navLink('home', t('navHome'), onGoHome)}
+              {navLink('services', t('navServices'), onGoServices)}
+              {navLink('partners', t('navPartners'), onGoPartners)}
+              {navLink('articles', t('navNewsFeeds'), onGoArticles)}
+              {navLink('about', t('navAbout'), onGoAbout)}
+              {navLink('contact', t('navContact'), onGoContact)}
             </nav>
 
             <div className="header-ctas">
-              <button className="btn-ghost" onClick={onJoinPilot}>{t('joinPilot')}</button>
-              <button className="btn-teal" onClick={onRequestProposal}>{t('requestProposal')}</button>
+              <button type="button" className="btn-ghost" onClick={onGoLogin}>{t('logIn')}</button>
+              <button type="button" className="btn-ghost" onClick={onJoinPilot}>{t('joinPilot')}</button>
+              <button type="button" className="btn-teal" onClick={onRequestProposal}>{t('requestProposal')}</button>
             </div>
           </div>
         </header>
       )}
 
-      <div className="language-switcher" aria-label={t('language')}>
-        <label htmlFor="language-select">{t('language')}</label>
-        <select
-          id="language-select"
-          value={language}
-          onChange={(event) => setLanguage(event.target.value as typeof language)}
-        >
-          {languages.map((item) => (
-            <option key={item.code} value={item.code}>
-              {item.label}
-            </option>
-          ))}
-        </select>
-      </div>
+      <LanguageSwitcher />
 
       <main className="app-content">{children}</main>
 
@@ -107,7 +115,16 @@ function RootLayout({
 
             <div className="footer-col">
               <h4>{t('footerExplore')}</h4>
-              {[t('navHome'), t('navServices'), t('footerPilotTraining'), t('navAcademy'), t('navAbout')].map(l => <a key={l} href="#">{l}</a>)}
+              {footerLinks.map((link) => (
+                <button
+                  key={link.label}
+                  type="button"
+                  className="footer-link-btn"
+                  onClick={link.onClick}
+                >
+                  {link.label}
+                </button>
+              ))}
             </div>
 
             <div className="footer-col">
@@ -120,8 +137,8 @@ function RootLayout({
             <div className="footer-cta-box">
               <p className="footer-cta-title">{t('footerReady')}</p>
               <p className="footer-cta-sub">{t('footerReadySub')}</p>
-              <button className="btn-teal" style={{width:'100%', marginBottom:'0.6rem'}} onClick={onRequestProposal}>{t('requestProposal')}</button>
-              <button className="btn-ghost-sm" style={{width:'100%'}}>{t('footerWhatsApp')}</button>
+              <button type="button" className="btn-teal" style={{width:'100%', marginBottom:'0.6rem'}} onClick={onRequestProposal}>{t('requestProposal')}</button>
+              <button type="button" className="btn-ghost-sm" style={{width:'100%'}}>{t('footerWhatsApp')}</button>
             </div>
           </div>
           <div className="footer-bottom">

@@ -6,6 +6,7 @@ import {
 } from '../utils/api';
 import type { LearnerProfile } from '../utils/auth';
 import { useLanguage } from '../i18n/LanguageContext';
+import { normalizeZambiaPhone, sanitizePhoneInput, ZAMBIA_PHONE_PREFIX } from '../utils/phone';
 
 type CourseEnrollmentProps = {
   learnerProfile: LearnerProfile;
@@ -400,13 +401,17 @@ function CourseEnrollment({
                   </label>
                   <label className="login-field">
                     <span>Mobile number</span>
-                    <input
-                      type="tel"
-                      placeholder="e.g. 0977 123 456"
-                      value={mobileNumber}
-                      onChange={(e) => setMobileNumber(e.target.value)}
-                      maxLength={13}
-                    />
+                    <div className="phone-input-group">
+                      <span className="phone-input-prefix">{ZAMBIA_PHONE_PREFIX}</span>
+                      <input
+                        type="tel"
+                        inputMode="tel"
+                        placeholder={t('phoneLocalPlaceholder')}
+                        value={mobileNumber}
+                        onChange={(e) => setMobileNumber(sanitizePhoneInput(e.target.value))}
+                        maxLength={12}
+                      />
+                    </div>
                   </label>
                   <div className="ce-field-hint">
                     A USSD push prompt will appear on {mobileNetwork} in a real integration.
@@ -535,7 +540,7 @@ function CourseEnrollment({
               <h3>Processing payment{'.'.repeat(processingDots)}</h3>
               <p>
                 {paymentMethod === 'mobile_money'
-                  ? `Awaiting ${mobileNetwork} confirmation on ${mobileNumber || 'your number'}`
+                  ? `Awaiting ${mobileNetwork} confirmation on ${normalizeZambiaPhone(mobileNumber) || 'your number'}`
                   : paymentMethod === 'card'
                   ? 'Verifying card details with issuing bank'
                   : 'Validating sponsor voucher code'}

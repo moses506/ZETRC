@@ -1,6 +1,7 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { authenticateLearner } from '../utils/api';
 import { useLanguage } from '../i18n/LanguageContext';
+import '../styles/auth.css';
 
 type LoginProps = {
   onBackHome: () => void;
@@ -8,12 +9,6 @@ type LoginProps = {
   onGoRegister: () => void;
   notice?: string | null;
 };
-
-const trustPoints = [
-  'Mobile-friendly learning built for field access',
-  'Certification-ready pilot modules and assignments',
-  'Direct support for trainees, cooperatives, and partner teams',
-];
 
 function Login({ onBackHome, onLogin, onGoRegister, notice }: LoginProps) {
   const { t, tList } = useLanguage();
@@ -57,63 +52,36 @@ function Login({ onBackHome, onLogin, onGoRegister, notice }: LoginProps) {
   };
 
   return (
-    <section className="login-page">
-      <div className="orb orb-1" />
-      <div className="orb orb-2" />
-      <div className="orb orb-3" />
-
-      <div className="login-shell">
-        <div className="login-intro">
-          <button className="login-back" onClick={onBackHome}>
-            {t('backLanding')}
+    <section className="auth-page">
+      <div className="auth-layout">
+        <aside className="auth-aside">
+          <button type="button" className="auth-back-link" onClick={onBackHome}>
+            {t('backHome')}
           </button>
 
-          <span className="hero-badge">
-            <span className="badge-dot" />
+          <span className="auth-eyebrow">
+            <span className="auth-eyebrow-dot" aria-hidden="true" />
             {t('pilotTrainingAccess')}
           </span>
 
-          <h1 className="login-title">
-            {t('welcomeAcademy')}
-          </h1>
+          <h1 className="auth-title">{t('welcomeAcademy')}</h1>
+          <p className="auth-copy">{t('loginCopy')}</p>
 
-          <p className="login-copy">
-            {t('loginCopy')}
-          </p>
+          <ul className="auth-highlights">
+            {tList('trustPoints').map((point) => (
+              <li className="auth-highlight" key={point}>
+                <span className="auth-highlight-mark" aria-hidden="true">✓</span>
+                <span>{point}</span>
+              </li>
+            ))}
+          </ul>
+        </aside>
 
-          <div className="login-feature-panel glass-card">
-            <div className="login-panel-header">
-              <span className="card-tag">{t('whyTrainees')}</span>
-              <span className="login-status">{t('liveCohort')}</span>
-            </div>
-
-            <div className="login-metrics">
-              <div className="login-metric">
-                <strong>{t('fiveModules')}</strong>
-                <span>{t('structuredPathway')}</span>
-              </div>
-              <div className="login-metric">
-                <strong>{t('weeklyTasks')}</strong>
-                <span>{t('simpleTracking')}</span>
-              </div>
-            </div>
-
-            <div className="login-trust-list">
-              {tList('trustPoints').map((point) => (
-                <div className="login-trust-item" key={point}>
-                  <span className="login-check">✓</span>
-                  <span>{point}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <div className="login-card glass-card">
-          <div className="login-card-top">
+        <div className="auth-card">
+          <header className="auth-card-header">
             <div className="brand">
               <div className="brand-icon">
-                <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+                <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden="true">
                   <rect width="22" height="22" rx="6" fill="#032b14" />
                   <path d="M11 3 L19 11 L11 19 L3 11 Z" stroke="#d9a51f" strokeWidth="1.5" fill="none" strokeLinejoin="round"/>
                   <circle cx="11" cy="11" r="2.5" fill="#d9a51f" />
@@ -124,19 +92,15 @@ function Login({ onBackHome, onLogin, onGoRegister, notice }: LoginProps) {
                 <span className="brand-sub">{t('brandSub')}</span>
               </div>
             </div>
+            <span className="auth-kicker">{t('memberLogin')}</span>
+          </header>
 
-            <div className="login-kicker">{t('memberLogin')}</div>
-          </div>
-
-          <div className="login-card-copy">
+          <div className="auth-card-intro">
             <h2>{t('continueJourney')}</h2>
             <p>{t('useAccess')}</p>
           </div>
 
-          <form
-            className="login-form"
-            onSubmit={handleSubmit}
-          >
+          <form className="auth-form" onSubmit={handleSubmit}>
             {notice ? (
               <div className="auth-feedback auth-feedback-success" role="status" aria-live="polite">
                 {notice}
@@ -149,7 +113,7 @@ function Login({ onBackHome, onLogin, onGoRegister, notice }: LoginProps) {
               </div>
             ) : null}
 
-            <label className="login-field">
+            <label className="auth-field">
               <span>{t('emailAddress')}</span>
               <input
                 type="email"
@@ -162,7 +126,7 @@ function Login({ onBackHome, onLogin, onGoRegister, notice }: LoginProps) {
               />
             </label>
 
-            <label className="login-field">
+            <label className="auth-field">
               <span>{t('password')}</span>
               <input
                 type="password"
@@ -175,8 +139,8 @@ function Login({ onBackHome, onLogin, onGoRegister, notice }: LoginProps) {
               />
             </label>
 
-            <div className="login-row">
-              <label className="login-remember">
+            <div className="auth-row">
+              <label className="auth-remember">
                 <input
                   type="checkbox"
                   checked={keepSignedIn}
@@ -185,23 +149,23 @@ function Login({ onBackHome, onLogin, onGoRegister, notice }: LoginProps) {
                 />
                 <span>{t('keepSignedIn')}</span>
               </label>
-              <button type="button" className="login-link-btn">{t('needHelp')}</button>
+              <button type="button" className="auth-link-btn">{t('needHelp')}</button>
             </div>
 
-            <button type="submit" className="btn-hero-teal login-submit" disabled={isSubmitting}>
+            <button type="submit" className="auth-submit" disabled={isSubmitting}>
               {isSubmitting ? t('signingIn') : t('enterDashboard')}
             </button>
           </form>
 
           <div className="auth-switch">
             {t('newToZetrc')}
-            <button type="button" className="login-link-btn" onClick={onGoRegister}>
+            <button type="button" className="auth-link-btn" onClick={onGoRegister}>
               {t('createAccount')}
             </button>
           </div>
 
-          <div className="login-footer-note">
-            <span className="trust-dot" />
+          <div className="auth-footer-note">
+            <span className="auth-footer-dot" aria-hidden="true" />
             {t('protectedAccess')}
           </div>
         </div>

@@ -413,8 +413,8 @@ function ZetrcIcon({ size = 22 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 22 22" fill="none">
       <rect width="22" height="22" rx="6" fill="#071a14" />
-      <path d="M11 3L19 11L11 19L3 11Z" stroke="#1D9E75" strokeWidth="1.5" fill="none" strokeLinejoin="round" />
-      <circle cx="11" cy="11" r="2.5" fill="#1D9E75" />
+      <path d="M11 3L19 11L11 19L3 11Z" stroke="#06431f" strokeWidth="1.5" fill="none" strokeLinejoin="round" />
+      <circle cx="11" cy="11" r="2.5" fill="#d9a51f" />
     </svg>
   );
 }
@@ -438,7 +438,7 @@ function ProgressRing({ pct }: { pct: number }) {
       <circle cx="74" cy="74" r={r} fill="none" stroke="var(--border-subtle)" strokeWidth="10" />
       <circle
         cx="74" cy="74" r={r} fill="none"
-        stroke="#1D9E75" strokeWidth="10"
+        stroke="#d9a51f" strokeWidth="10"
         strokeDasharray={circ} strokeDashoffset={offset}
         strokeLinecap="round"
         transform="rotate(-90 74 74)"
@@ -2134,13 +2134,13 @@ function NavIcon({ name }: { name: string }) {
 
 function CertIcon({ earned }: { earned: boolean }) {
   return earned
-    ? <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="#0F6E56" strokeWidth="1.5"><path d="M9 1l2 4 4 .6-2.9 2.8.7 4L9 10.5 5.2 12.4l.7-4L3 5.6 7 5z"/><path d="M6 15l3 1.5 3-1.5"/></svg>
+    ? <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="#06431f" strokeWidth="1.5"><path d="M9 1l2 4 4 .6-2.9 2.8.7 4L9 10.5 5.2 12.4l.7-4L3 5.6 7 5z"/><path d="M6 15l3 1.5 3-1.5"/></svg>
     : <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="var(--text-muted)" strokeWidth="1.5"><circle cx="9" cy="9" r="7"/><path d="M9 6v3l2 2"/></svg>;
 }
 
 function WaIcon() {
   return (
-    <svg width="14" height="14" viewBox="0 0 16 16" fill="#1D9E75">
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="#d9a51f">
       <path d="M8 1C4.13 1 1 4.13 1 8c0 1.23.33 2.38.9 3.38L1 15l3.72-.87A7 7 0 108 1zm0 12.5a5.43 5.43 0 01-2.77-.76l-.2-.12-2.08.49.5-1.96-.13-.2A5.5 5.5 0 1113.5 8 5.51 5.51 0 018 13.5zm3-4.13c-.16-.08-1-.49-1.16-.55-.15-.06-.26-.08-.37.08-.11.17-.42.55-.52.66-.09.11-.19.12-.35.04-.85-.43-1.41-.76-1.97-1.73-.15-.26.15-.24.43-.8a.3.3 0 00-.01-.28c-.04-.08-.37-.88-.5-1.2-.13-.32-.27-.27-.37-.28H5.5c-.1 0-.27.04-.41.19s-.54.52-.54 1.28.55 1.48.63 1.58c.08.1 1.08 1.65 2.62 2.31.37.16.65.25.87.32.37.12.7.1.97.06.3-.05.92-.38 1.05-.74.13-.36.13-.67.09-.74-.04-.07-.15-.11-.31-.19z"/>
     </svg>
   );

@@ -1,7 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import RootLayout from './layout/RootLayout';
 import Home from './pages/Home';
-import Training from './pages/Training';
+import About from './pages/About';
+import Services from './pages/Services';
+import Articles from './pages/Articles';
+import Partners from './pages/Partners';
+import Contact from './pages/Contact';
 import Dashboard from './pages/dasboard';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -16,38 +20,13 @@ import {
 } from './utils/auth';
 import type { Course } from './utils/api';
 import { useLanguage } from './i18n/LanguageContext';
-
-type PageKey = 'home' | 'training' | 'login' | 'register' | 'course-enrollment' | 'dashboard';
-
-const pageHashMap: Record<PageKey, string> = {
-  home: '',
-  training: '#training',
-  login: '#login',
-  register: '#register',
-  'course-enrollment': '#course-enrollment',
-  dashboard: '#dashboard',
-};
-
-function getPageFromHash(hash: string): PageKey {
-  switch (hash.replace('#', '').toLowerCase()) {
-    case 'training':
-      return 'training';
-    case 'login':
-      return 'login';
-    case 'register':
-      return 'register';
-    case 'course-enrollment':
-      return 'course-enrollment';
-    case 'dashboard':
-      return 'dashboard';
-    default:
-      return 'home';
-  }
-}
-
-function getPageUrl(page: PageKey): string {
-  return `${window.location.pathname}${window.location.search}${pageHashMap[page]}`;
-}
+import {
+  getPageFromHash,
+  getPageUrl,
+  pageHashMap,
+  PUBLIC_PAGES,
+  type PageKey,
+} from './types/pages';
 
 function App() {
   const { t } = useLanguage();
@@ -107,17 +86,20 @@ function App() {
     }
 
     setPage(nextPage);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
 
-  const handleJoinPilot = () => navigateToPage('training');
+  const handleJoinPilot = () => navigateToPage('register');
   const handleGoHome = () => navigateToPage('home');
-  const handleGoTraining = () => navigateToPage('training');
+  const handleGoAbout = () => navigateToPage('about');
+  const handleGoServices = () => navigateToPage('services');
+  const handleGoArticles = () => navigateToPage('articles');
+  const handleGoPartners = () => navigateToPage('partners');
+  const handleGoContact = () => navigateToPage('contact');
 
   const handleLogin = () => {
     setLearnerProfile(getStoredLearnerProfile());
     setIsAuthenticated(hasStoredLearnerSession());
-    // Always clear any stale enrollment from a previous session so
-    // CourseEnrollment re-checks the backend for the newly logged-in user.
     setLearnerEnrollment(null);
     setAuthNotice(null);
     navigateToPage('course-enrollment', true);
@@ -164,9 +146,6 @@ function App() {
     navigateToPage('home', true);
   };
 
-  // Called by CourseEnrollment when the API confirms the user is already enrolled.
-  // We persist it to localStorage so the dashboard has something to read, then
-  // skip the form entirely.
   const handleAlreadyEnrolled = (
     courseName: string,
     duration: string,
@@ -181,7 +160,6 @@ function App() {
     navigateToPage('dashboard', true);
   };
 
-  // Called by CourseEnrollment after a successful new enrollment submission.
   const handleEnrollmentComplete = (
     course: Course,
     description: string,
@@ -209,29 +187,33 @@ function App() {
   };
 
   const handleRequestProposal = () => {
-    navigateToPage('home');
-
-    window.setTimeout(() => {
-      const contactSection = document.getElementById('contact');
-      contactSection?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 0);
+    navigateToPage('contact');
   };
 
   return (
     <RootLayout
       currentPage={page}
-      showChrome={page === 'home' || page === 'training'}
+      showChrome={PUBLIC_PAGES.includes(page)}
       onJoinPilot={handleJoinPilot}
+      onGoLogin={() => handleGoLogin()}
       onGoHome={handleGoHome}
-      onGoTraining={handleGoTraining}
+      onGoAbout={handleGoAbout}
+      onGoServices={handleGoServices}
+      onGoArticles={handleGoArticles}
+      onGoPartners={handleGoPartners}
+      onGoContact={handleGoContact}
       onRequestProposal={handleRequestProposal}
     >
       {page === 'home' && (
         <Home onJoinPilot={handleJoinPilot} onRequestProposal={handleRequestProposal} />
       )}
-      {page === 'training' && (
-        <Training onApplyNow={handleGoRegister} onSignIn={handleGoLogin} />
+      {page === 'about' && <About />}
+      {page === 'services' && (
+        <Services onJoinTraining={handleJoinPilot} />
       )}
+      {page === 'articles' && <Articles />}
+      {page === 'partners' && <Partners />}
+      {page === 'contact' && <Contact />}
       {page === 'login' && !isAuthenticated && (
         <Login
           onBackHome={handleGoHome}

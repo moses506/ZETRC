@@ -42,8 +42,8 @@
 }
 
 .editor-toolbar button:hover:not(:disabled) {
-  background: #eef8f4;
-  border-color: rgba(29, 158, 117, 0.38);
+  background: #eaf7de;
+  border-color: rgba(6, 67, 31, 0.38);
 }
 
 .editor-toolbar button:disabled {
