@@ -7,6 +7,8 @@ import {
 import type { LearnerProfile } from '../utils/auth';
 import { useLanguage } from '../i18n/LanguageContext';
 import { normalizeZambiaPhone, sanitizePhoneInput, ZAMBIA_PHONE_PREFIX } from '../utils/phone';
+import '../styles/auth.css';
+import '../styles/course-enrollment.css';
 
 type CourseEnrollmentProps = {
   learnerProfile: LearnerProfile;
@@ -66,6 +68,8 @@ const PAYMENT_METHODS = [
   },
 ];
 
+const STEPS = ['course', 'payment', 'receipt'] as const;
+
 function CourseEnrollment({
   learnerProfile,
   onEnrollmentComplete,
@@ -73,14 +77,12 @@ function CourseEnrollment({
 }: CourseEnrollmentProps) {
   const { t, tList } = useLanguage();
 
-  // Core state
   const [courses, setCourses] = useState<Course[]>([]);
   const [selectedCourseName, setSelectedCourseName] = useState('');
   const [description, setDescription] = useState('');
   const [isLoadingCourses, setIsLoadingCourses] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // Payment state
   const [step, setStep] = useState<PaymentStep>('course');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('mobile_money');
   const [mobileNumber, setMobileNumber] = useState('');
@@ -110,9 +112,8 @@ function CourseEnrollment({
     };
     load();
     return () => { cancelled = true; };
-  }, []);
+  }, [t]);
 
-  // Animate the processing dots
   useEffect(() => {
     if (step !== 'processing') return;
     const id = window.setInterval(() => setProcessingDots((d) => (d + 1) % 4), 420);
@@ -127,13 +128,11 @@ function CourseEnrollment({
   const courseFee = getCourseFee(selectedCourse);
   const totalDue = courseFee;
 
-  // Format card number with spaces
   const handleCardNumber = (v: string) => {
     const digits = v.replace(/\D/g, '').slice(0, 16);
     setCardNumber(digits.replace(/(.{4})/g, '$1 ').trim());
   };
 
-  // Format expiry MM/YY
   const handleExpiry = (v: string) => {
     const digits = v.replace(/\D/g, '').slice(0, 4);
     setCardExpiry(digits.length > 2 ? `${digits.slice(0, 2)}/${digits.slice(2)}` : digits);
@@ -173,73 +172,49 @@ function CourseEnrollment({
     receipt:    { label: 'Confirmed',     num: 3 },
   };
 
+  const stepKicker = step === 'course'
+    ? t('enroll')
+    : step === 'payment'
+    ? 'Payment'
+    : step === 'processing'
+    ? 'Processing'
+    : 'Confirmed';
+
+  const currentStepNum = stepMeta[step].num;
+
   return (
-    <section className="login-page course-enrollment-page">
-      <div className="orb orb-1" />
-      <div className="orb orb-2" />
-      <div className="orb orb-3" />
+    <section className="auth-page ce-page">
+      <div className="ce-layout">
+        <aside className="auth-aside">
+          <button type="button" className="auth-back-link" onClick={onBackToLogin}>
+            {t('backSignIn')}
+          </button>
 
-      <div className="login-shell ce-shell">
+          <span className="auth-eyebrow">
+            <span className="auth-eyebrow-dot" aria-hidden="true" />
+            {t('firstTimeEnrollment')}
+          </span>
 
-        {/* ── LEFT ── */}
-        <div className="login-intro">
-          <div className="course-enrollment-heading-row">
-            <button className="login-back" onClick={onBackToLogin}>
-              {t('backSignIn')}
-            </button>
-            <span className="hero-badge">
-              <span className="badge-dot" />
-              {t('firstTimeEnrollment')}
-            </span>
-          </div>
-
-          <h1 className="login-title" style={{ marginTop: '1.25rem' }}>
-            {t('chooseCourse')}
-          </h1>
-          <p className="login-copy">
+          <h1 className="auth-title">{t('chooseCourse')}</h1>
+          <p className="auth-copy">
             {t('welcomeLearner')}, {learnerProfile.firstName || t('learnerFallback')}. {t('courseIntro')}
           </p>
 
-          {/* Step tracker */}
-          <div className="ce-step-tracker">
-            {(['course', 'payment', 'receipt'] as const).map((s, i) => {
-              const done = stepMeta[step].num > i + 1;
-              const active = stepMeta[step].num === i + 1 || (s === 'receipt' && step === 'processing');
-              return (
-                <div key={s} className={`ce-step${active ? ' ce-step--active' : ''}${done ? ' ce-step--done' : ''}`}>
-                  <div className="ce-step-dot">
-                    {done ? '✓' : i + 1}
-                  </div>
-                  <span>{stepMeta[s].label}</span>
-                  {i < 2 && <div className="ce-step-line" />}
-                </div>
-              );
-            })}
-          </div>
+          <ul className="auth-highlights">
+            {tList('enrollmentPoints').map((point) => (
+              <li className="auth-highlight" key={point}>
+                <span className="auth-highlight-mark" aria-hidden="true">✓</span>
+                <span>{point}</span>
+              </li>
+            ))}
+          </ul>
+        </aside>
 
-          <div className="login-feature-panel glass-card" style={{ marginTop: '2rem' }}>
-            <div className="login-panel-header">
-              <span className="card-tag">{t('enrollmentDetails')}</span>
-              <span className="login-status">{t('required')}</span>
-            </div>
-            <div className="login-trust-list" style={{ marginTop: '1rem' }}>
-              {tList('enrollmentPoints').map((point) => (
-                <div className="login-trust-item" key={point}>
-                  <span className="login-check">✓</span>
-                  <span>{point}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* ── RIGHT CARD ── */}
-        <div className="login-card glass-card ce-card">
-          {/* Brand header */}
-          <div className="login-card-top">
+        <div className="auth-card ce-card">
+          <header className="auth-card-header">
             <div className="brand">
               <div className="brand-icon">
-                <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+                <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden="true">
                   <rect width="22" height="22" rx="6" fill="#032b14" />
                   <path d="M11 3 L19 11 L11 19 L3 11 Z" stroke="#d9a51f" strokeWidth="1.5" fill="none" strokeLinejoin="round" />
                   <circle cx="11" cy="11" r="2.5" fill="#d9a51f" />
@@ -250,15 +225,29 @@ function CourseEnrollment({
                 <span className="brand-sub">{t('brandSub')}</span>
               </div>
             </div>
-            <div className="login-kicker">
-              {step === 'course' ? t('enroll') : step === 'payment' ? 'Payment' : step === 'processing' ? 'Processing' : 'Confirmed'}
-            </div>
-          </div>
+            <span className="auth-kicker">{stepKicker}</span>
+          </header>
 
-          {/* ── STEP: COURSE SELECTION ── */}
+          <nav className="ce-steps" aria-label="Enrollment progress">
+            {STEPS.map((s, i) => {
+              const done = currentStepNum > i + 1;
+              const active = currentStepNum === i + 1 || (s === 'receipt' && step === 'processing');
+              const labels = { course: 'Choose course', payment: 'Payment', receipt: 'Confirmed' };
+              return (
+                <div
+                  key={s}
+                  className={`ce-step${active ? ' ce-step--active' : ''}${done ? ' ce-step--done' : ''}`}
+                >
+                  <div className="ce-step-dot">{done ? '✓' : i + 1}</div>
+                  <span className="ce-step-label">{labels[s]}</span>
+                </div>
+              );
+            })}
+          </nav>
+
           {step === 'course' && (
-            <form className="login-form" onSubmit={handleCourseSubmit}>
-              <div className="login-card-copy">
+            <form className="auth-form" onSubmit={handleCourseSubmit}>
+              <div className="auth-card-intro">
                 <h2>{t('completeEnrollment')}</h2>
                 <p>{t('pickCourse')}</p>
               </div>
@@ -267,32 +256,35 @@ function CourseEnrollment({
                 <div className="auth-feedback auth-feedback-error" role="alert">{errorMessage}</div>
               )}
 
-              <div className="course-summary-card">
+              <div className="ce-learner-strip">
                 <div>
-                  <span className="course-summary-label">{t('learner')}</span>
+                  <span className="ce-learner-label">{t('learner')}</span>
                   <strong>{learnerProfile.fullName}</strong>
                 </div>
                 <div>
-                  <span className="course-summary-label">{t('email')}</span>
+                  <span className="ce-learner-label">{t('email')}</span>
                   <strong>{learnerProfile.email || t('noEmail')}</strong>
                 </div>
               </div>
 
-              <div className="ce-picker-label">
+              <div className="ce-section-head">
                 <span>{t('selectCourse')}</span>
                 {!isLoadingCourses && courses.length > 0 && (
-                  <span className="ce-course-count">{courses.length} courses available</span>
+                  <span className="ce-course-count">{courses.length} available</span>
                 )}
               </div>
 
               {isLoadingCourses ? (
                 <div className="ce-loading-grid">
-                  {[1, 2, 3].map((n) => <div key={n} className="ce-course-skeleton" />)}
+                  {[1, 2, 3, 4].map((n) => <div key={n} className="ce-course-skeleton" />)}
                 </div>
               ) : courses.length === 0 ? (
-                <div className="ce-empty"><span>📭</span><p>{t('noCourses')}</p></div>
+                <div className="ce-empty">
+                  <span className="ce-empty-icon" aria-hidden="true">📭</span>
+                  <p>{t('noCourses')}</p>
+                </div>
               ) : (
-                <div className="ce-courses-grid">
+                <div className="ce-courses-grid" role="listbox" aria-label={t('selectCourse')}>
                   {courses.map((course) => {
                     const isSelected = course.name === selectedCourseName;
                     const fee = getCourseFee(course);
@@ -300,15 +292,17 @@ function CourseEnrollment({
                       <button
                         key={course.name}
                         type="button"
+                        role="option"
+                        aria-selected={isSelected}
                         className={`ce-course-card${isSelected ? ' ce-course-card--selected' : ''}`}
                         onClick={() => setSelectedCourseName(course.name)}
                       >
                         <div className="ce-course-card-top">
-                          <span className="ce-course-icon">{getCourseIcon(course.name)}</span>
+                          <span className="ce-course-icon" aria-hidden="true">{getCourseIcon(course.name)}</span>
                           {course.duration && (
                             <span className="ce-duration-pill">{course.duration}</span>
                           )}
-                          {isSelected && <span className="ce-selected-check">✓</span>}
+                          {isSelected && <span className="ce-selected-check" aria-hidden="true">✓</span>}
                         </div>
                         <div className="ce-course-name">{course.name}</div>
                         {course.description && (
@@ -321,10 +315,9 @@ function CourseEnrollment({
                 </div>
               )}
 
-              <label className="login-field">
+              <label className="auth-field">
                 <span>{t('courseInterest')}</span>
                 <textarea
-                  className="login-textarea"
                   rows={3}
                   placeholder={t('courseInterestPlaceholder')}
                   value={description}
@@ -334,7 +327,7 @@ function CourseEnrollment({
 
               <button
                 type="submit"
-                className="btn-hero-teal login-submit"
+                className="auth-submit"
                 disabled={isLoadingCourses || !selectedCourse}
               >
                 Continue to payment →
@@ -342,10 +335,9 @@ function CourseEnrollment({
             </form>
           )}
 
-          {/* ── STEP: PAYMENT ── */}
           {step === 'payment' && (
-            <div className="login-form">
-              <div className="login-card-copy">
+            <div className="auth-form">
+              <div className="auth-card-intro">
                 <h2>Payment simulation</h2>
                 <p>No real money is charged — this simulates the payment flow.</p>
               </div>
@@ -354,7 +346,6 @@ function CourseEnrollment({
                 <div className="auth-feedback auth-feedback-error" role="alert">{errorMessage}</div>
               )}
 
-              {/* Order summary */}
               <div className="ce-order-summary">
                 <div className="ce-order-row">
                   <span>{getCourseIcon(selectedCourse?.name ?? '')} {selectedCourse?.name}</span>
@@ -368,27 +359,27 @@ function CourseEnrollment({
                 <div className="ce-order-ref">Ref: {paymentReference}</div>
               </div>
 
-              {/* Method picker */}
-              <div className="ce-method-grid" role="radiogroup">
+              <div className="ce-method-grid" role="radiogroup" aria-label="Payment method">
                 {PAYMENT_METHODS.map((m) => (
                   <button
                     key={m.value}
                     type="button"
+                    role="radio"
+                    aria-checked={paymentMethod === m.value}
                     className={`ce-method-btn${paymentMethod === m.value ? ' ce-method-btn--active' : ''}`}
                     onClick={() => setPaymentMethod(m.value)}
                   >
-                    <span className="ce-method-icon">{m.icon}</span>
+                    <span className="ce-method-icon" aria-hidden="true">{m.icon}</span>
                     <span className="ce-method-label">{m.label}</span>
                     <span className="ce-method-detail">{m.detail}</span>
-                    {paymentMethod === m.value && <span className="ce-method-check">✓</span>}
+                    {paymentMethod === m.value && <span className="ce-method-check" aria-hidden="true">✓</span>}
                   </button>
                 ))}
               </div>
 
-              {/* Method-specific fields */}
               {paymentMethod === 'mobile_money' && (
                 <div className="ce-payment-fields">
-                  <label className="login-field">
+                  <label className="auth-field">
                     <span>Network</span>
                     <select
                       value={mobileNetwork}
@@ -399,7 +390,7 @@ function CourseEnrollment({
                       <option>Zamtel</option>
                     </select>
                   </label>
-                  <label className="login-field">
+                  <label className="auth-field">
                     <span>Mobile number</span>
                     <div className="phone-input-group">
                       <span className="phone-input-prefix">{ZAMBIA_PHONE_PREFIX}</span>
@@ -421,9 +412,8 @@ function CourseEnrollment({
 
               {paymentMethod === 'card' && (
                 <div className="ce-payment-fields">
-                  {/* Visual card preview */}
                   <div className="ce-card-preview">
-                    <div className="ce-card-preview-chip">💳</div>
+                    <div className="ce-card-preview-chip" aria-hidden="true">💳</div>
                     <div className="ce-card-preview-number">
                       {cardNumber || '•••• •••• •••• ••••'}
                     </div>
@@ -433,7 +423,7 @@ function CourseEnrollment({
                     </div>
                   </div>
 
-                  <label className="login-field">
+                  <label className="auth-field">
                     <span>Cardholder name</span>
                     <input
                       type="text"
@@ -442,7 +432,7 @@ function CourseEnrollment({
                       onChange={(e) => setCardName(e.target.value.toUpperCase())}
                     />
                   </label>
-                  <label className="login-field">
+                  <label className="auth-field">
                     <span>Card number</span>
                     <input
                       type="text"
@@ -453,7 +443,7 @@ function CourseEnrollment({
                     />
                   </label>
                   <div className="ce-card-row">
-                    <label className="login-field">
+                    <label className="auth-field">
                       <span>Expiry</span>
                       <input
                         type="text"
@@ -463,7 +453,7 @@ function CourseEnrollment({
                         inputMode="numeric"
                       />
                     </label>
-                    <label className="login-field">
+                    <label className="auth-field">
                       <span>CVV</span>
                       <input
                         type="password"
@@ -474,13 +464,13 @@ function CourseEnrollment({
                       />
                     </label>
                   </div>
-                  <div className="ce-field-hint">🔒 Demo only — no real card data is stored.</div>
+                  <div className="ce-field-hint">Demo only — no real card data is stored.</div>
                 </div>
               )}
 
               {paymentMethod === 'voucher' && (
                 <div className="ce-payment-fields">
-                  <label className="login-field">
+                  <label className="auth-field">
                     <span>Voucher code</span>
                     <input
                       type="text"
@@ -505,7 +495,7 @@ function CourseEnrollment({
                 </button>
                 <button
                   type="button"
-                  className="btn-hero-teal ce-pay-btn"
+                  className="auth-submit ce-pay-btn"
                   onClick={handlePaymentSubmit}
                 >
                   Pay {formatKwacha(totalDue)}
@@ -513,17 +503,16 @@ function CourseEnrollment({
               </div>
 
               <div className="ce-sim-notice">
-                🧪 Simulation mode — this flow is for testing only
+                Simulation mode — this flow is for testing only
               </div>
             </div>
           )}
 
-          {/* ── STEP: PROCESSING ── */}
           {step === 'processing' && (
             <div className="ce-processing">
               <div className="ce-processing-ring">
-                <svg viewBox="0 0 64 64" fill="none">
-                  <circle cx="32" cy="32" r="28" stroke="rgba(217,165,31,0.15)" strokeWidth="4" />
+                <svg viewBox="0 0 64 64" fill="none" aria-hidden="true">
+                  <circle cx="32" cy="32" r="28" stroke="rgba(6,67,31,0.12)" strokeWidth="4" />
                   <circle
                     cx="32" cy="32" r="28"
                     stroke="#d9a51f" strokeWidth="4"
@@ -532,7 +521,7 @@ function CourseEnrollment({
                     className="ce-spinner-arc"
                   />
                 </svg>
-                <span className="ce-processing-icon">
+                <span className="ce-processing-icon" aria-hidden="true">
                   {paymentMethod === 'mobile_money' ? '📱' : paymentMethod === 'card' ? '💳' : '🎟️'}
                 </span>
               </div>
@@ -557,10 +546,9 @@ function CourseEnrollment({
             </div>
           )}
 
-          {/* ── STEP: RECEIPT ── */}
           {step === 'receipt' && (
             <div className="ce-receipt">
-              <div className="ce-receipt-badge">✓</div>
+              <div className="ce-receipt-badge" aria-hidden="true">✓</div>
               <h3>Payment confirmed!</h3>
               <p>Your learner dashboard is now active. Welcome to ZETRC.</p>
 
@@ -589,14 +577,13 @@ function CourseEnrollment({
                 </div>
                 <div className="ce-receipt-row">
                   <span>Status</span>
-                  <strong className="ce-receipt-status">✓ Paid (Simulated)</strong>
+                  <strong className="ce-receipt-status">Paid (Simulated)</strong>
                 </div>
               </div>
 
               <button
                 type="button"
-                className="btn-hero-teal login-submit"
-                style={{ marginTop: '1.5rem' }}
+                className="auth-submit"
                 onClick={() => onEnrollmentComplete(selectedCourse!, description, {})}
               >
                 Go to my dashboard →

@@ -1,0 +1,200 @@
+/* ─── TEAM PAGE ─────────────────────────────────────── */
+
+.team-page {
+  background: #eff8e4;
+  min-height: 100vh;
+}
+
+.team-hero {
+  position: relative;
+  padding: 2.75rem 2rem 2.5rem;
+  background: linear-gradient(145deg, #032b14 0%, #06431f 100%);
+  overflow: hidden;
+}
+
+.team-hero::before {
+  content: '';
+  position: absolute;
+  top: -80px;
+  right: -60px;
+  width: 280px;
+  height: 280px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(245, 197, 66, 0.12) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.team-hero-inner {
+  position: relative;
+  z-index: 1;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.team-hero-title {
+  font-family: var(--font-display, 'Clash Display', sans-serif);
+  font-size: clamp(1.85rem, 3.5vw, 2.5rem);
+  font-weight: 700;
+  line-height: 1.15;
+  color: #fffaf0;
+}
+
+.team-hero-subtitle {
+  margin-top: 0.75rem;
+  max-width: 680px;
+  font-size: 1rem;
+  line-height: 1.65;
+  color: #c7ddd5;
+}
+
+.team-body {
+  padding: 2.25rem 2rem 4.5rem;
+}
+
+.team-body-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.team-intro {
+  max-width: 72ch;
+  font-size: 0.98rem;
+  line-height: 1.75;
+  color: #5a7a67;
+}
+
+.team-section-title {
+  font-family: var(--font-display, 'Clash Display', sans-serif);
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #032b14;
+  margin-bottom: 1rem;
+}
+
+.team-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.team-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1.35rem 1.4rem;
+  border-radius: 20px;
+  background: #fff;
+  border: 1px solid rgba(6, 67, 31, 0.12);
+  box-shadow: 0 10px 32px rgba(3, 43, 20, 0.06);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.team-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 40px rgba(3, 43, 20, 0.09);
+}
+
+.team-card-top {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.team-avatar {
+  flex-shrink: 0;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #032b14, #06431f);
+  color: #f5c542;
+  font-family: var(--font-display, 'Clash Display', sans-serif);
+  font-size: 1.15rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.team-card-title {
+  font-family: var(--font-display, 'Clash Display', sans-serif);
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #032b14;
+  line-height: 1.25;
+}
+
+.team-card-role {
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #8a650e;
+  margin-top: 0.15rem;
+}
+
+.team-card-desc {
+  font-size: 0.88rem;
+  line-height: 1.65;
+  color: #5a7a67;
+}
+
+.team-values {
+  padding: 1.35rem 1.5rem;
+  border-radius: 20px;
+  background: #fff;
+  border: 1px solid rgba(6, 67, 31, 0.12);
+}
+
+.team-values-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.85rem;
+}
+
+.team-value-item {
+  padding: 1rem;
+  border-radius: 14px;
+  background: #f9fcf6;
+  border: 1px solid #d8ecd0;
+}
+
+.team-value-item strong {
+  display: block;
+  font-family: var(--font-display, 'Clash Display', sans-serif);
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #032b14;
+  margin-bottom: 0.35rem;
+}
+
+.team-value-item span {
+  font-size: 0.82rem;
+  line-height: 1.55;
+  color: #5a7a67;
+}
+
+@media (max-width: 900px) {
+  .team-values-list {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .team-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .team-hero,
+  .team-body {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+}

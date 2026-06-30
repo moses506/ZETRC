@@ -2,6 +2,7 @@ import { ReactNode } from 'react';
 import { useLanguage } from '../i18n/LanguageContext';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 import type { PageKey } from '../types/pages';
+import { ZETRC_WHATSAPP_DISPLAY, openWhatsApp } from '../utils/whatsapp';
 import '../styles/global.css';
 
 type RootLayoutProps = {
@@ -10,6 +11,8 @@ type RootLayoutProps = {
   onGoLogin: () => void;
   onGoHome: () => void;
   onGoAbout: () => void;
+  onGoImpact: () => void;
+  onGoTeam: () => void;
   onGoServices: () => void;
   onGoArticles: () => void;
   onGoPartners: () => void;
@@ -25,6 +28,8 @@ function RootLayout({
   onGoLogin,
   onGoHome,
   onGoAbout,
+  onGoImpact,
+  onGoTeam,
   onGoServices,
   onGoArticles,
   onGoPartners,
@@ -50,13 +55,15 @@ function RootLayout({
     { page: 'services', label: t('navServices'), onClick: onGoServices },
     { page: 'partners', label: t('navPartners'), onClick: onGoPartners },
     { page: 'about', label: t('navAbout'), onClick: onGoAbout },
+    { page: 'impact', label: t('navImpact'), onClick: onGoImpact },
+    { page: 'team', label: t('navTeam'), onClick: onGoTeam },
     { page: 'articles', label: t('navNewsFeeds'), onClick: onGoArticles },
     { page: 'login', label: t('logIn'), onClick: onGoLogin },
     { page: 'contact', label: t('navContact'), onClick: onGoContact },
   ];
 
   return (
-    <div className="app-shell">
+    <div className={`app-shell${currentPage === 'home' ? ' app-shell--landing' : ''}`}>
       {showChrome && (
         <header className="app-header">
           <div className="header-inner">
@@ -80,6 +87,8 @@ function RootLayout({
               {navLink('partners', t('navPartners'), onGoPartners)}
               {navLink('articles', t('navNewsFeeds'), onGoArticles)}
               {navLink('about', t('navAbout'), onGoAbout)}
+              {navLink('impact', t('navImpact'), onGoImpact)}
+              {navLink('team', t('navTeam'), onGoTeam)}
               {navLink('contact', t('navContact'), onGoContact)}
             </nav>
 
@@ -130,7 +139,7 @@ function RootLayout({
             <div className="footer-col">
               <h4>{t('navContact')}</h4>
               <span>✉ info@zetrc.org</span>
-              <span>📞 +260 97 9885086</span>
+              <span>📞 {ZETRC_WHATSAPP_DISPLAY}</span>
               <span>📍 Lusaka, Zambia</span>
             </div>
 
@@ -138,7 +147,14 @@ function RootLayout({
               <p className="footer-cta-title">{t('footerReady')}</p>
               <p className="footer-cta-sub">{t('footerReadySub')}</p>
               <button type="button" className="btn-teal" style={{width:'100%', marginBottom:'0.6rem'}} onClick={onRequestProposal}>{t('requestProposal')}</button>
-              <button type="button" className="btn-ghost-sm" style={{width:'100%'}}>{t('footerWhatsApp')}</button>
+              <button
+                type="button"
+                className="btn-ghost-sm"
+                style={{ width: '100%' }}
+                onClick={() => openWhatsApp(t('whatsappMsgPartnership'))}
+              >
+                {t('footerWhatsApp')}
+              </button>
             </div>
           </div>
           <div className="footer-bottom">

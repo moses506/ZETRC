@@ -2,6 +2,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import RootLayout from './layout/RootLayout';
 import Home from './pages/Home';
 import About from './pages/About';
+import Impact from './pages/Impact';
+import Team from './pages/Team';
 import Services from './pages/Services';
 import Articles from './pages/Articles';
 import Partners from './pages/Partners';
@@ -92,6 +94,8 @@ function App() {
   const handleJoinPilot = () => navigateToPage('register');
   const handleGoHome = () => navigateToPage('home');
   const handleGoAbout = () => navigateToPage('about');
+  const handleGoImpact = () => navigateToPage('impact');
+  const handleGoTeam = () => navigateToPage('team');
   const handleGoServices = () => navigateToPage('services');
   const handleGoArticles = () => navigateToPage('articles');
   const handleGoPartners = () => navigateToPage('partners');
@@ -198,6 +202,8 @@ function App() {
       onGoLogin={() => handleGoLogin()}
       onGoHome={handleGoHome}
       onGoAbout={handleGoAbout}
+      onGoImpact={handleGoImpact}
+      onGoTeam={handleGoTeam}
       onGoServices={handleGoServices}
       onGoArticles={handleGoArticles}
       onGoPartners={handleGoPartners}
@@ -208,6 +214,8 @@ function App() {
         <Home onJoinPilot={handleJoinPilot} onRequestProposal={handleRequestProposal} />
       )}
       {page === 'about' && <About />}
+      {page === 'impact' && <Impact />}
+      {page === 'team' && <Team />}
       {page === 'services' && (
         <Services onJoinTraining={handleJoinPilot} />
       )}

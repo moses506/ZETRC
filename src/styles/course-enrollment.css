@@ -1,0 +1,826 @@
+/* ─── COURSE ENROLLMENT ──────────────────────────── */
+
+.ce-page {
+  padding: 2rem 2rem 3.5rem;
+}
+
+.ce-layout {
+  max-width: 1380px;
+  width: 100%;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: minmax(0, 380px) minmax(0, 1fr);
+  gap: 2.25rem;
+  align-items: start;
+}
+
+.ce-card {
+  padding: 1.75rem 2rem 1.65rem;
+  max-width: none;
+  width: 100%;
+  min-width: 0;
+}
+
+.ce-page .auth-form {
+  gap: 0.95rem;
+}
+
+.ce-page .auth-card-intro {
+  margin-top: 1rem;
+}
+
+.ce-page .auth-card-intro h2 {
+  font-size: 1.35rem;
+}
+
+/* Step bar (inside card) */
+.ce-steps {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin-top: 1.15rem;
+  padding: 0.65rem;
+  border-radius: 14px;
+  background: #f9fcf6;
+  border: 1px solid rgba(6, 67, 31, 0.1);
+}
+
+.ce-step {
+  flex: 1;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  min-width: 0;
+  position: relative;
+}
+
+.ce-step:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1px;
+  height: 18px;
+  background: rgba(6, 67, 31, 0.12);
+}
+
+.ce-step-dot {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid #8caf78;
+  background: #fff;
+  color: #032b14;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  transition: all 0.25s ease;
+}
+
+.ce-step-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #06431f;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ce-step--active .ce-step-dot {
+  border-color: #d9a51f;
+  background: #032b14;
+  color: #f5c542;
+  box-shadow: 0 0 0 3px rgba(217, 165, 31, 0.18);
+}
+
+.ce-step--active .ce-step-label {
+  color: #032b14;
+}
+
+.ce-step--done .ce-step-dot {
+  border-color: #06431f;
+  background: #06431f;
+  color: #f5c542;
+}
+
+.ce-step--done .ce-step-label {
+  color: #06431f;
+}
+
+/* Learner summary */
+.ce-learner-strip {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.85rem 1.25rem;
+  padding: 0.9rem 1rem;
+  border-radius: 12px;
+  background: #f9fcf6;
+  border: 1px solid #d8ecd0;
+}
+
+.ce-learner-label {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #8aa896;
+}
+
+.ce-learner-strip strong {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #032b14;
+  word-break: break-word;
+}
+
+/* Course picker */
+.ce-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 0.15rem;
+}
+
+.ce-section-head span:first-child {
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: #032b14;
+}
+
+.ce-course-count {
+  font-size: 0.76rem;
+  font-weight: 500;
+  color: #8aa896;
+}
+
+.ce-courses-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.7rem;
+  max-height: none;
+  overflow: visible;
+}
+
+.ce-course-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  padding: 0.95rem;
+  border-radius: 14px;
+  border: 1.5px solid #d8ecd0;
+  background: #fff;
+  color: #032b14;
+  cursor: pointer;
+  text-align: left;
+  transition:
+    border-color 0.18s ease,
+    background 0.18s ease,
+    box-shadow 0.18s ease,
+    transform 0.12s ease;
+}
+
+.ce-course-card:hover {
+  border-color: #8caf78;
+  background: #f9fcf6;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(3, 43, 20, 0.06);
+}
+
+.ce-course-card--selected {
+  border-color: #06431f;
+  background: #eaf7de;
+  box-shadow:
+    0 0 0 3px rgba(6, 67, 31, 0.08),
+    0 8px 22px rgba(3, 43, 20, 0.08);
+}
+
+.ce-course-card-top {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.ce-course-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: #032b14;
+  color: #f5c542;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.ce-duration-pill {
+  margin-left: auto;
+  border-radius: 999px;
+  border: 1px solid #bfe8b4;
+  background: #f9fcf6;
+  color: #06431f;
+  padding: 0.18rem 0.5rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.ce-selected-check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #d9a51f;
+  color: #032b14;
+  font-size: 0.68rem;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.ce-course-name {
+  font-family: var(--font-display, 'Clash Display', sans-serif);
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #032b14;
+  line-height: 1.3;
+}
+
+.ce-course-desc {
+  font-size: 0.76rem;
+  color: #5a7a67;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.ce-course-fee {
+  margin-top: auto;
+  padding-top: 0.35rem;
+  font-family: var(--font-display, 'Clash Display', sans-serif);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #06431f;
+}
+
+.ce-course-card--selected .ce-course-fee {
+  color: #032b14;
+}
+
+/* Loading & empty */
+.ce-loading-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.7rem;
+}
+
+.ce-course-skeleton {
+  height: 118px;
+  border-radius: 14px;
+  background: linear-gradient(90deg, #f0f7eb 25%, #e8f3e0 50%, #f0f7eb 75%);
+  background-size: 200% 100%;
+  animation: ce-shimmer 1.4s ease-in-out infinite;
+  border: 1px solid #d8ecd0;
+}
+
+@keyframes ce-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.ce-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 2rem 1.5rem;
+  border-radius: 14px;
+  border: 1px dashed #bfe8b4;
+  background: #f9fcf6;
+  color: #5a7a67;
+  font-size: 0.88rem;
+  text-align: center;
+}
+
+.ce-empty-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #eaf7de;
+  border: 1px solid #bfe8b4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+}
+
+/* Textarea */
+.ce-field textarea,
+.ce-page .auth-field textarea,
+.ce-page .auth-field select {
+  width: 100%;
+  border-radius: 12px;
+  border: 1px solid #d8ecd0;
+  background: #f9fcf6;
+  color: #032b14;
+  padding: 0.85rem 0.95rem;
+  font-family: var(--font-body);
+  font-size: 0.92rem;
+  outline: none;
+  resize: vertical;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.ce-page .auth-field textarea:focus,
+.ce-page .auth-field select:focus {
+  border-color: #06431f;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(6, 67, 31, 0.08);
+}
+
+.ce-page .auth-field textarea::placeholder {
+  color: #8aa896;
+}
+
+/* Order summary */
+.ce-order-summary {
+  border-radius: 14px;
+  border: 1px solid #d8ecd0;
+  background: #f9fcf6;
+  padding: 1rem 1.1rem;
+  display: grid;
+  gap: 0.6rem;
+}
+
+.ce-order-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 0.88rem;
+  color: #06431f;
+}
+
+.ce-order-row > span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ce-order-divider {
+  height: 1px;
+  background: rgba(6, 67, 31, 0.1);
+}
+
+.ce-order-total {
+  color: #032b14;
+  font-weight: 600;
+}
+
+.ce-order-total strong {
+  font-family: var(--font-display, 'Clash Display', sans-serif);
+  font-size: 1.25rem;
+  color: #032b14;
+}
+
+.ce-order-ref {
+  font-size: 0.72rem;
+  color: #8aa896;
+  letter-spacing: 0.04em;
+  font-family: 'Courier New', monospace;
+}
+
+/* Payment methods */
+.ce-method-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+.ce-method-btn {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 0.85rem 0.5rem;
+  border-radius: 14px;
+  border: 1.5px solid #d8ecd0;
+  background: #fff;
+  cursor: pointer;
+  text-align: center;
+  transition: border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease, transform 0.12s ease;
+  min-height: 88px;
+}
+
+.ce-method-btn:hover {
+  border-color: #8caf78;
+  background: #f9fcf6;
+  transform: translateY(-1px);
+}
+
+.ce-method-btn--active {
+  border-color: #06431f;
+  background: #032b14;
+  box-shadow: 0 0 0 3px rgba(6, 67, 31, 0.1);
+}
+
+.ce-method-icon {
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+.ce-method-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #032b14;
+  line-height: 1.2;
+}
+
+.ce-method-detail {
+  font-size: 0.68rem;
+  color: #5a7a67;
+  line-height: 1.35;
+}
+
+.ce-method-btn--active .ce-method-label {
+  color: #fffaf0;
+}
+
+.ce-method-btn--active .ce-method-detail {
+  color: rgba(234, 247, 222, 0.85);
+}
+
+.ce-method-check {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #f5c542;
+  color: #032b14;
+  font-size: 0.62rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ce-payment-fields {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.ce-field-hint {
+  font-size: 0.78rem;
+  color: #5a7a67;
+  line-height: 1.55;
+  padding: 0.65rem 0.85rem;
+  border-radius: 10px;
+  background: #f9fcf6;
+  border: 1px solid #d8ecd0;
+}
+
+/* Card preview */
+.ce-card-preview {
+  border-radius: 14px;
+  background: linear-gradient(135deg, #032b14 0%, #06431f 55%, #0a5a2a 100%);
+  border: 1px solid rgba(6, 67, 31, 0.2);
+  padding: 1.1rem 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  box-shadow: 0 8px 24px rgba(3, 43, 20, 0.15);
+}
+
+.ce-card-preview-chip {
+  font-size: 1.4rem;
+}
+
+.ce-card-preview-number {
+  font-family: 'Courier New', monospace;
+  font-size: 1rem;
+  color: #fffaf0;
+  letter-spacing: 0.14em;
+}
+
+.ce-card-preview-bottom {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.72rem;
+  color: #bdd5b2;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.ce-card-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+/* Actions */
+.ce-payment-actions {
+  display: flex;
+  gap: 0.75rem;
+  align-items: stretch;
+}
+
+.ce-back-btn {
+  flex-shrink: 0;
+  border: 1.5px solid #d8ecd0;
+  background: #fff;
+  color: #06431f;
+  border-radius: 999px;
+  padding: 0.78rem 1.1rem;
+  font-family: var(--font-body);
+  font-size: 0.86rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color 0.2s, background 0.2s, color 0.2s;
+}
+
+.ce-back-btn:hover {
+  border-color: #06431f;
+  background: #f9fcf6;
+  color: #032b14;
+}
+
+.ce-pay-btn {
+  flex: 1;
+}
+
+.ce-sim-notice {
+  font-size: 0.74rem;
+  color: #8aa896;
+  text-align: center;
+  padding: 0.5rem 0.75rem;
+  border-radius: 10px;
+  background: #f9fcf6;
+  border: 1px dashed #bfe8b4;
+}
+
+/* Processing */
+.ce-processing {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.5rem 0.5rem 0.75rem;
+  text-align: center;
+}
+
+.ce-processing-ring {
+  position: relative;
+  width: 72px;
+  height: 72px;
+}
+
+.ce-processing-ring svg {
+  width: 100%;
+  height: 100%;
+  animation: ce-spin 1.2s linear infinite;
+}
+
+@keyframes ce-spin {
+  to { transform: rotate(360deg); }
+}
+
+.ce-spinner-arc {
+  transform-origin: center;
+}
+
+.ce-processing-icon {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+}
+
+.ce-processing h3 {
+  font-family: var(--font-display, 'Clash Display', sans-serif);
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #032b14;
+}
+
+.ce-processing p {
+  font-size: 0.88rem;
+  color: #5a7a67;
+  max-width: 320px;
+  line-height: 1.55;
+}
+
+.ce-processing-steps {
+  width: 100%;
+  display: grid;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.ce-proc-step {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: 10px;
+  background: #f9fcf6;
+  border: 1px solid #d8ecd0;
+  font-size: 0.84rem;
+  color: #5a7a67;
+}
+
+.ce-proc-step span {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #eaf7de;
+  border: 1px solid #bfe8b4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.68rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.ce-proc-step--done {
+  color: #06431f;
+  border-color: #bfe8b4;
+  background: #eaf7de;
+}
+
+.ce-proc-step--done span {
+  background: #06431f;
+  border-color: #06431f;
+  color: #f5c542;
+}
+
+/* Receipt */
+.ce-receipt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 0.5rem 0 0.25rem;
+}
+
+.ce-receipt-badge {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: #06431f;
+  color: #f5c542;
+  font-size: 1.4rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 24px rgba(3, 43, 20, 0.15);
+}
+
+.ce-receipt h3 {
+  margin-top: 1rem;
+  font-family: var(--font-display, 'Clash Display', sans-serif);
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #032b14;
+}
+
+.ce-receipt > p {
+  margin-top: 0.45rem;
+  font-size: 0.9rem;
+  color: #5a7a67;
+  max-width: 340px;
+  line-height: 1.55;
+}
+
+.ce-receipt-details {
+  width: 100%;
+  margin-top: 1.25rem;
+  border-radius: 14px;
+  border: 1px solid #d8ecd0;
+  background: #f9fcf6;
+  padding: 0.25rem 0;
+  text-align: left;
+}
+
+.ce-receipt-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.7rem 1rem;
+  font-size: 0.86rem;
+  border-bottom: 1px solid rgba(6, 67, 31, 0.08);
+}
+
+.ce-receipt-row:last-child {
+  border-bottom: none;
+}
+
+.ce-receipt-row span {
+  color: #8aa896;
+}
+
+.ce-receipt-row strong {
+  color: #032b14;
+  text-align: right;
+  font-weight: 600;
+}
+
+.ce-receipt-ref {
+  font-family: 'Courier New', monospace;
+  font-size: 0.78rem;
+}
+
+.ce-receipt-status {
+  color: #06431f !important;
+}
+
+.ce-receipt .auth-submit {
+  margin-top: 1.5rem;
+}
+
+/* Responsive */
+@media (min-width: 1100px) {
+  .ce-layout {
+    max-width: 1440px;
+    grid-template-columns: minmax(0, 400px) minmax(760px, 1fr);
+  }
+
+  .ce-courses-grid,
+  .ce-loading-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 980px) {
+  .ce-layout {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .ce-courses-grid,
+  .ce-loading-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ce-learner-strip {
+    grid-template-columns: 1fr;
+  }
+
+  .ce-method-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ce-method-btn {
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 0.75rem;
+    min-height: auto;
+    padding: 0.85rem 1rem;
+  }
+
+  .ce-method-check {
+    top: 50%;
+    transform: translateY(-50%);
+  }
+
+  .ce-payment-actions {
+    flex-direction: column;
+  }
+
+  .ce-card-row {
+    grid-template-columns: 1fr;
+  }
+
+  .ce-step-label {
+    display: none;
+  }
+
+  .ce-card {
+    padding: 1.35rem 1.25rem 1.25rem;
+  }
+}

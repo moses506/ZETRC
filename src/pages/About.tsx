@@ -22,6 +22,11 @@ function About() {
     ...S.aboutTitle,
     fontSize: isMobile ? '2rem' : S.aboutTitle.fontSize,
   };
+  const aboutBodyStyle: CSSProperties = {
+    ...S.aboutBody,
+    maxWidth: isTablet ? undefined : S.aboutBody.maxWidth,
+    marginLeft: isTablet ? undefined : S.aboutBody.marginLeft,
+  };
 
   return (
     <PageReveal style={pageRoot}>
@@ -34,15 +39,14 @@ function About() {
                 <span style={S.aboutEyebrowText}>About Us</span>
               </div>
               <div style={aboutTitleStyle}>
-                Zambia Environmental Training and{' '}
-                <span style={S.aboutTitleAccent}>Research Centre</span>
+                Zambia Environmental Training and Research Centre
               </div>
               <div style={S.aboutAcronym}>Known as ZETRC</div>
             </div>
           </RevealItem>
 
           <RevealItem index={1}>
-            <div style={S.aboutBody}>
+            <div style={aboutBodyStyle}>
               <p style={S.aboutP}>
                 ZETRC is a youth-led training, research, and innovation institution committed to building the next generation of leaders, entrepreneurs, and professionals in agriculture, climate resilience, environmental sustainability, and social development.
               </p>

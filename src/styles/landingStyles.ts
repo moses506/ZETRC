@@ -276,13 +276,13 @@ export const pageStyles: Record<string, CSSProperties> = {
     textTransform: "uppercase" as const,
   },
   aboutTitle: {
-    fontFamily: "'Playfair Display', serif",
+    fontFamily: "'Clash Display', sans-serif",
     fontSize: "2.5rem",
-    fontWeight: 900,
+    fontWeight: 700,
     color: "#032B14",
     lineHeight: 1.18,
   },
-  aboutTitleAccent: { color: "#06431F", fontStyle: "italic" },
+  aboutTitleAccent: { color: "#06431F" },
   aboutAcronym: {
     marginTop: "1.5rem",
     fontSize: 13,
@@ -290,7 +290,13 @@ export const pageStyles: Record<string, CSSProperties> = {
     color: "#5A7A67",
     letterSpacing: "0.02em",
   },
-  aboutBody: { display: "flex", flexDirection: "column" as const, gap: "1.4rem" },
+  aboutBody: {
+    display: "flex",
+    flexDirection: "column" as const,
+    gap: "1.4rem",
+    maxWidth: 560,
+    marginLeft: "auto",
+  },
   aboutP: {
     fontSize: 15,
     lineHeight: 1.85,

@@ -1,6 +1,8 @@
 export type PageKey =
   | 'home'
   | 'about'
+  | 'impact'
+  | 'team'
   | 'services'
   | 'articles'
   | 'partners'
@@ -14,6 +16,8 @@ export type PageKey =
 export const PUBLIC_PAGES: PageKey[] = [
   'home',
   'about',
+  'impact',
+  'team',
   'services',
   'articles',
   'partners',
@@ -23,6 +27,8 @@ export const PUBLIC_PAGES: PageKey[] = [
 export const pageHashMap: Record<PageKey, string> = {
   home: '',
   about: '#about',
+  impact: '#impact',
+  team: '#team',
   services: '#services',
   articles: '#articles',
   partners: '#partners',
@@ -38,6 +44,10 @@ export function getPageFromHash(hash: string): PageKey {
   switch (hash.replace('#', '').toLowerCase()) {
     case 'about':
       return 'about';
+    case 'impact':
+      return 'impact';
+    case 'team':
+      return 'team';
     case 'services':
       return 'services';
     case 'articles':

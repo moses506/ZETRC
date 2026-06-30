@@ -2,6 +2,7 @@ import type { CSSProperties } from 'react';
 import { PageReveal, RevealItem } from '../components/PageReveal';
 import { useLanguage } from '../i18n/LanguageContext';
 import { ZAMBIA_PHONE_PREFIX } from '../utils/phone';
+import { ZETRC_WHATSAPP_DISPLAY, openWhatsApp } from '../utils/whatsapp';
 import useWindowWidth from '../hooks/useWindowWidth';
 import { pageRoot, pageStyles as S } from '../styles/landingStyles';
 
@@ -37,8 +38,13 @@ function Contact() {
 
   const contactItems = [
     { icon: '✉️', label: t('email'), value: 'info@zetrc.org' },
-    { icon: '📞', label: t('phone'), value: '+260 97 9885086' },
-    { icon: '💬', label: t('footerWhatsApp'), value: t('messageUs') },
+    { icon: '📞', label: t('phone'), value: ZETRC_WHATSAPP_DISPLAY },
+    {
+      icon: '💬',
+      label: t('footerWhatsApp'),
+      value: t('messageUs'),
+      onClick: () => openWhatsApp(t('whatsappMsgGeneral')),
+    },
   ];
 
   return (
@@ -55,7 +61,25 @@ function Contact() {
               <div style={S.contactLinks}>
                 {contactItems.map((c, index) => (
                   <RevealItem key={c.label} index={index + 1}>
-                    <div style={S.contactLinkRow}>
+                    <div
+                      style={{
+                        ...S.contactLinkRow,
+                        ...(c.onClick ? { cursor: 'pointer' } : {}),
+                      }}
+                      {...(c.onClick
+                        ? {
+                            role: 'button',
+                            tabIndex: 0,
+                            onClick: c.onClick,
+                            onKeyDown: (event) => {
+                              if (event.key === 'Enter' || event.key === ' ') {
+                                event.preventDefault();
+                                c.onClick?.();
+                              }
+                            },
+                          }
+                        : {})}
+                    >
                       <div style={S.contactLinkIcon}>{c.icon}</div>
                       <div>
                         <div style={S.linkLabel}>{c.label}</div>
@@ -66,7 +90,13 @@ function Contact() {
                 ))}
               </div>
               <RevealItem index={4}>
-                <button type="button" style={S.btnPrimary}>{t('contactWhatsapp')}</button>
+                <button
+                  type="button"
+                  style={S.btnPrimary}
+                  onClick={() => openWhatsApp(t('whatsappMsgGeneral'))}
+                >
+                  {t('contactWhatsapp')}
+                </button>
               </RevealItem>
             </div>
           </RevealItem>

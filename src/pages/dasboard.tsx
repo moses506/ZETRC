@@ -44,8 +44,7 @@ type AssignmentUploadDraft = {
   dataUrl: string;
 };
 
-const whatsappSupportUrl =
-  'https://wa.me/260979885086?text=Hello%20ZETRC%20support%2C%20I%20need%20help%20with%20my%20training%20dashboard.';
+import { openWhatsApp } from '../utils/whatsapp';
 const audioProgressStorageKey = 'zetrcLessonAudioProgress';
 const audioProgressUpdatedEvent = 'zetrcAudioProgressUpdated';
 const assignmentSubmissionStorageKey = 'zetrcAssignmentSubmissions';
@@ -1950,7 +1949,7 @@ export default function Dashboard({
   );
 
   const openWhatsAppSupport = () => {
-    window.open(whatsappSupportUrl, '_blank', 'noopener,noreferrer');
+    openWhatsApp(t('whatsappMsgSupport'));
   };
 
   return (
