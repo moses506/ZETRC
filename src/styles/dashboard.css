@@ -200,7 +200,63 @@ html { -webkit-font-smoothing: antialiased; }
   color: var(--text-primary); letter-spacing: -0.01em;
 }
 .date-line { font-size: 13px; color: var(--text-secondary); margin-top: 3px; }
-.top-actions { display: flex; gap: 8px; flex-shrink: 0; }
+.top-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+
+.notification-wrap { position: relative; }
+.notification-bell-btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1px solid var(--border-card);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+}
+.notification-bell-btn:hover { border-color: var(--brand-bg-3); color: var(--brand-bg-3); }
+.notification-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 3px;
+  border-radius: 999px;
+  background: var(--amber, #d9a51f);
+  color: #032b14;
+  font-size: 10px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+.notification-dropdown {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  width: 320px;
+  max-height: 380px;
+  overflow-y: auto;
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--r-lg);
+  box-shadow: 0 12px 32px rgba(3, 43, 20, 0.14);
+  padding: 14px;
+  z-index: 20;
+  animation: fadeUp 0.18s ease both;
+}
+.notification-dropdown-header {
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 10px;
+}
 
 .btn-ghost-top {
   padding: 9px 18px;
@@ -271,6 +327,20 @@ html { -webkit-font-smoothing: antialiased; }
 .card-link  { font-size: 12px; color: var(--teal); cursor: pointer; font-weight: 500; }
 .card-link:hover { text-decoration: underline; }
 
+.enrolled-course-name {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 6px;
+}
+.enrolled-course-desc {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin: 0 0 16px;
+}
+
 /* Mid grid */
 .mid-grid {
   display: grid;
@@ -305,9 +375,10 @@ html { -webkit-font-smoothing: antialiased; }
   display: flex; align-items: center; justify-content: center;
   font-size: 12px; font-weight: 600; flex-shrink: 0;
 }
-.mod-done   { background: var(--teal-light); color: var(--teal-dark); }
-.mod-active { background: var(--teal); color: #fff; }
-.mod-locked { background: #e8ede9; color: var(--text-muted); }
+.mod-done      { background: var(--teal-light); color: var(--teal-dark); }
+.mod-active    { background: var(--teal); color: #fff; }
+.mod-available { background: rgba(6, 67, 31, 0.08); color: var(--teal-dark); }
+.mod-locked    { background: #e8ede9; color: var(--text-muted); }
 
 .mod-info { flex: 1; min-width: 0; }
 .mod-name { font-size: 13px; font-weight: 500; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -317,9 +388,10 @@ html { -webkit-font-smoothing: antialiased; }
   font-size: 10px; padding: 3px 9px; border-radius: 99px;
   font-weight: 600; flex-shrink: 0;
 }
-.badge-done   { background: var(--teal-light); color: var(--teal-dark); }
-.badge-active { background: rgba(6, 67, 31,0.12); color: var(--teal); border: 1px solid rgba(6, 67, 31,0.3); }
-.badge-locked { background: #e8ede9; color: var(--text-muted); border: 1px solid var(--border-subtle); }
+.badge-done      { background: var(--teal-light); color: var(--teal-dark); }
+.badge-active    { background: rgba(6, 67, 31,0.12); color: var(--teal); border: 1px solid rgba(6, 67, 31,0.3); }
+.badge-available { background: rgba(6, 67, 31,0.06); color: var(--text-secondary); border: 1px solid var(--border-subtle); }
+.badge-locked    { background: #e8ede9; color: var(--text-muted); border: 1px solid var(--border-subtle); }
 
 /* Ring card */
 .ring-card { display: flex; flex-direction: column; }
@@ -339,7 +411,7 @@ html { -webkit-font-smoothing: antialiased; }
 /* Bottom grid */
 .bottom-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
 }
 
@@ -349,7 +421,7 @@ html { -webkit-font-smoothing: antialiased; }
 
 .library-highlight-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
 }
 
@@ -527,11 +599,15 @@ html { -webkit-font-smoothing: antialiased; }
   gap: 18px;
 }
 
-.training-hero-card {
+/* Prefixed dash- to avoid colliding with the public marketing site's
+   identically-named .training-hero-card etc. in global.css, which was
+   silently forcing a 560px min-height onto this card via the cascade. */
+.dash-training-hero {
   display: grid;
   grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr);
+  align-items: start;
   gap: 18px;
-  padding: 22px;
+  padding: 18px 22px;
   border-radius: 24px;
   background:
     radial-gradient(circle at top left, rgba(6, 67, 31,0.14), transparent 34%),
@@ -551,42 +627,42 @@ html { -webkit-font-smoothing: antialiased; }
   text-transform: uppercase;
 }
 
-.training-hero-copy h2 {
-  margin-top: 10px;
+.dash-training-hero-copy h2 {
+  margin-top: 6px;
   font-family: var(--font-display);
-  font-size: clamp(24px, 3.5vw, 38px);
+  font-size: clamp(22px, 3vw, 30px);
   line-height: 1.05;
   letter-spacing: -0.03em;
   max-width: 14ch;
 }
 
-.training-hero-copy p {
-  margin-top: 12px;
+.dash-training-hero-copy p {
+  margin-top: 8px;
   max-width: 520px;
   color: #b6cdc3;
   font-size: 13px;
-  line-height: 1.7;
+  line-height: 1.6;
 }
 
-.training-meta-row {
+.dash-training-meta-row {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
-  margin-top: 18px;
+  margin-top: 14px;
 }
 
-.training-meta-pill {
-  padding: 12px 14px;
+.dash-training-meta-pill {
+  padding: 9px 14px;
   border-radius: 16px;
   background: rgba(255,255,255,0.06);
   border: 1px solid rgba(255,255,255,0.08);
 }
-.training-meta-pill span {
+.dash-training-meta-pill span {
   display: block;
   font-size: 11px;
   color: #a1c2b6;
 }
-.training-meta-pill strong {
+.dash-training-meta-pill strong {
   display: block;
   margin-top: 4px;
   font-family: var(--font-display);
@@ -594,52 +670,52 @@ html { -webkit-font-smoothing: antialiased; }
   color: #ffffff;
 }
 
-.training-hero-progress { display: flex; align-items: stretch; }
+.dash-training-hero-progress { display: flex; align-items: flex-start; }
 
-.lesson-preview-card {
+.dash-lesson-preview-card {
   width: 100%;
-  padding: 18px;
+  padding: 16px;
   border-radius: 20px;
   background: rgba(255,255,255,0.08);
   border: 1px solid rgba(255,255,255,0.1);
   backdrop-filter: blur(10px);
 }
 
-.lesson-preview-top {
+.dash-lesson-preview-top {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
 }
-.lesson-duration { color: #dceee8; font-size: 12px; font-weight: 500; }
+.dash-lesson-duration { color: #dceee8; font-size: 12px; font-weight: 500; }
 
-.lesson-preview-card h3 {
+.dash-lesson-preview-card h3 {
   margin-top: 12px;
   font-family: var(--font-display);
   font-size: 20px;
   line-height: 1.1;
 }
-.lesson-preview-card p {
+.dash-lesson-preview-card p {
   margin-top: 8px;
   color: #bfd8cf;
   font-size: 13px;
   line-height: 1.65;
 }
 
-.lesson-progress { margin-top: 16px; }
-.lesson-progress span {
+.dash-lesson-progress { margin-top: 12px; }
+.dash-lesson-progress span {
   display: inline-block;
   margin-top: 7px;
   font-size: 12px;
   color: #cce2da;
 }
-.lesson-progress-bar {
+.dash-lesson-progress-bar {
   height: 7px;
   border-radius: 999px;
   background: rgba(255,255,255,0.12);
   overflow: hidden;
 }
-.lesson-progress-fill {
+.dash-lesson-progress-fill {
   height: 100%;
   border-radius: 999px;
   background: linear-gradient(90deg, #06431f 0%, #d9a51f 100%);
@@ -796,6 +872,56 @@ html { -webkit-font-smoothing: antialiased; }
   display: flex;
   flex-direction: column;
   gap: 18px;
+}
+
+/* Dedicated full-page assignment detail view (replaces the board+sidebar
+   layout entirely while a task is open), so the writing area gets the
+   whole page instead of sharing a row with the sidebar. */
+.assignment-detail-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: 20px;
+  padding: 24px;
+}
+
+.assignment-back-btn {
+  align-self: flex-start;
+  padding: 8px 16px;
+  border-radius: 999px;
+  border: 1px solid var(--border-card);
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+}
+.assignment-back-btn:hover {
+  border-color: var(--brand-bg-3);
+  color: var(--brand-bg-3);
+}
+
+.assignment-detail-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.assignment-detail-header h2 {
+  margin-top: 4px;
+  font-family: var(--font-display);
+  font-size: clamp(20px, 2.4vw, 26px);
+  line-height: 1.15;
+  color: var(--text-primary);
+}
+
+.assignment-detail-due {
+  font-size: 13px;
+  color: var(--text-muted);
 }
 
 .assignments-hero-card {
@@ -1410,7 +1536,7 @@ html { -webkit-font-smoothing: antialiased; }
   .bottom-grid { grid-template-columns: 1fr; }
   .library-highlight-grid { grid-template-columns: 1fr; }
 
-  .training-hero-card,
+  .dash-training-hero,
   .training-main-grid,
   .training-module-resource-grid,
   .training-resource-grid,
@@ -1437,7 +1563,7 @@ html { -webkit-font-smoothing: antialiased; }
   .main-content { grid-column: 1; padding: 16px; }
   .stats-grid   { grid-template-columns: 1fr 1fr; }
   .top-actions  { flex-direction: column; }
-  .training-meta-row { grid-template-columns: 1fr; }
+  .dash-training-meta-row { grid-template-columns: 1fr; }
 
   .lesson-row { grid-template-columns: 34px 1fr; }
   .lesson-state { grid-column: 2; justify-self: start; }

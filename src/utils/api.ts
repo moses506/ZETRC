@@ -24,12 +24,37 @@ export type Course = {
   description: string;
 };
 
+export type UploadedDocument = {
+  name: string;
+  url: string;
+  size: number;
+};
+
+export type CourseModule = {
+  id?: string | number;
+  name: string;
+  course: string;
+  title: string;
+  description: string;
+  sortOrder: number;
+};
+
+export type Certificate = {
+  id?: string | number;
+  name: string;
+  course: string;
+  status: string;
+  issuedDate: string;
+  detail: string;
+};
+
 export type EnrollmentPayload = {
   firstName: string;
   lastName: string;
   email: string;
   description: string;
   course: Course;
+  documents?: UploadedDocument[];
 };
 
 export type StudentEnrollment = {
@@ -324,6 +349,40 @@ function toStudentEnrollment(record: ApiRecord): StudentEnrollment | null {
   };
 }
 
+function toCourseModule(record: ApiRecord): CourseModule | null {
+  const title = typeof record.title === 'string' ? record.title.trim() : '';
+
+  if (!title) {
+    return null;
+  }
+
+  return {
+    id: typeof record.id === 'string' || typeof record.id === 'number' ? record.id : undefined,
+    name: typeof record.name === 'string' ? record.name : '',
+    course: typeof record.course === 'string' ? record.course.trim() : '',
+    title,
+    description: typeof record.description === 'string' ? stripHtml(record.description) : '',
+    sortOrder: typeof record.sort_order === 'number' ? record.sort_order : 0,
+  };
+}
+
+function toCertificate(record: ApiRecord): Certificate | null {
+  const course = typeof record.course === 'string' ? record.course.trim() : '';
+
+  if (!course) {
+    return null;
+  }
+
+  return {
+    id: typeof record.id === 'string' || typeof record.id === 'number' ? record.id : undefined,
+    name: typeof record.name === 'string' ? record.name : '',
+    course,
+    status: typeof record.status === 'string' ? record.status.trim() : '',
+    issuedDate: typeof record.issued_date === 'string' ? record.issued_date.trim() : '',
+    detail: typeof record.detail === 'string' ? stripHtml(record.detail) : '',
+  };
+}
+
 function pickMessage(payload: unknown): string | null {
   if (typeof payload === 'string' && payload.trim()) {
     const normalized = payload.toLowerCase();
@@ -491,6 +550,45 @@ export async function fetchStudentEnrollment(email: string): Promise<StudentEnro
   return enrollments[0] ?? null;
 }
 
+export async function fetchCourseModules(courseName: string): Promise<CourseModule[]> {
+  if (!courseName.trim()) {
+    return [];
+  }
+
+  const payload = await request<unknown>('/api/get-data/?model=Course_Module', {
+    method: 'GET',
+    headers: {
+      model: 'Course_Module',
+      filters: JSON.stringify({ course: courseName }),
+    },
+  });
+
+  return extractRows(payload)
+    .filter(isRecord)
+    .map((item) => toCourseModule(item))
+    .filter((item): item is CourseModule => item !== null)
+    .sort((a, b) => a.sortOrder - b.sortOrder);
+}
+
+export async function fetchCertificates(email: string): Promise<Certificate[]> {
+  if (!email.trim()) {
+    return [];
+  }
+
+  const payload = await request<unknown>('/api/get-data/?model=Certificate', {
+    method: 'GET',
+    headers: {
+      model: 'Certificate',
+      filters: JSON.stringify({ learner_email: email }),
+    },
+  });
+
+  return extractRows(payload)
+    .filter(isRecord)
+    .map((item) => toCertificate(item))
+    .filter((item): item is Certificate => item !== null);
+}
+
 export async function fetchLessons(): Promise<LessonContent[]> {
   const payload = await request<unknown>('/api/get-data/?model=Lesson_Content', {
     method: 'GET',
@@ -531,8 +629,50 @@ export async function submitEnrollment(payload: EnrollmentPayload): Promise<unkn
       email: payload.email,
       course: payload.course.id ?? payload.course.name,
       description: payload.description,
+      documents: payload.documents ?? [],
     }),
   });
+}
+
+export async function uploadDocument(file: File): Promise<UploadedDocument> {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}/api/upload-file/`, {
+      method: 'POST',
+      body: formData,
+    });
+  } catch {
+    throw new Error('Unable to reach the server right now. Please check the backend connection and try again.');
+  }
+
+  const rawText = await response.text();
+  let payload: unknown = null;
+  if (rawText) {
+    try {
+      payload = JSON.parse(rawText) as unknown;
+    } catch {
+      payload = rawText;
+    }
+  }
+
+  if (!response.ok) {
+    throw new Error(pickMessage(payload) ?? `Upload failed with status ${response.status}`);
+  }
+
+  const rows = extractRows(payload);
+  const first = rows[0];
+  if (!isRecord(first) || typeof first.url !== 'string') {
+    throw new Error('Upload response was invalid.');
+  }
+
+  return {
+    name: typeof first.name === 'string' ? first.name : file.name,
+    url: first.url,
+    size: typeof first.size === 'number' ? first.size : file.size,
+  };
 }
 
 export function getApiMessage(payload: unknown, fallback: string): string {

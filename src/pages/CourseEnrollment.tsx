@@ -2,7 +2,9 @@ import { FormEvent, useEffect, useMemo, useState } from 'react';
 import {
   fetchCourses,
   submitEnrollment,
+  uploadDocument,
   type Course,
+  type UploadedDocument,
 } from '../utils/api';
 import type { LearnerProfile } from '../utils/auth';
 import { useLanguage } from '../i18n/LanguageContext';
@@ -17,8 +19,18 @@ type CourseEnrollmentProps = {
   onBackToLogin: () => void;
 };
 
-type PaymentStep = 'course' | 'payment' | 'processing' | 'receipt';
+type EnrollmentStep = 'course' | 'documents' | 'payment' | 'submitting' | 'receipt';
+type DocStatus = 'uploading' | 'done' | 'error';
 type PaymentMethod = 'mobile_money' | 'card' | 'voucher';
+
+type PendingDocument = {
+  id: string;
+  file: File;
+  status: DocStatus;
+  url?: string;
+  size?: number;
+  error?: string;
+};
 
 const COURSE_ICONS: Record<string, string> = {
   default: '📚', agric: '🌱', business: '💼',
@@ -33,6 +45,12 @@ function getCourseIcon(name: string): string {
   if (l.includes('finance') || l.includes('account')) return COURSE_ICONS.finance;
   if (l.includes('health') || l.includes('nurse')) return COURSE_ICONS.health;
   return COURSE_ICONS.default;
+}
+
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 function getCourseFee(course: Course | null): number {
@@ -68,14 +86,14 @@ const PAYMENT_METHODS = [
   },
 ];
 
-const STEPS = ['course', 'payment', 'receipt'] as const;
+const STEPS = ['course', 'documents', 'payment', 'receipt'] as const;
 
 function CourseEnrollment({
   learnerProfile,
   onEnrollmentComplete,
   onBackToLogin,
 }: CourseEnrollmentProps) {
-  const { t, tList } = useLanguage();
+  const { t } = useLanguage();
 
   const [courses, setCourses] = useState<Course[]>([]);
   const [selectedCourseName, setSelectedCourseName] = useState('');
@@ -83,7 +101,8 @@ function CourseEnrollment({
   const [isLoadingCourses, setIsLoadingCourses] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const [step, setStep] = useState<PaymentStep>('course');
+  const [step, setStep] = useState<EnrollmentStep>('course');
+  const [documents, setDocuments] = useState<PendingDocument[]>([]);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('mobile_money');
   const [mobileNumber, setMobileNumber] = useState('');
   const [mobileNetwork, setMobileNetwork] = useState('MTN');
@@ -115,12 +134,17 @@ function CourseEnrollment({
   }, [t]);
 
   useEffect(() => {
-    if (step !== 'processing') return;
+    if (step !== 'submitting') return;
     const id = window.setInterval(() => setProcessingDots((d) => (d + 1) % 4), 420);
     return () => window.clearInterval(id);
   }, [step]);
 
   const selectedCourse = courses.find((c) => c.name === selectedCourseName) ?? null;
+  const isUploadingDocuments = documents.some((d) => d.status === 'uploading');
+  const successfulDocuments = documents.filter(
+    (d): d is PendingDocument & { url: string } => d.status === 'done' && Boolean(d.url),
+  );
+  const canContinueToPayment = !isUploadingDocuments && successfulDocuments.length > 0;
   const paymentReference = useMemo(
     () => `ZETRC-${Math.random().toString(36).slice(2, 8).toUpperCase()}`,
     [selectedCourseName],
@@ -138,9 +162,58 @@ function CourseEnrollment({
     setCardExpiry(digits.length > 2 ? `${digits.slice(0, 2)}/${digits.slice(2)}` : digits);
   };
 
+  const handleContinueToDocuments = () => {
+    if (!selectedCourse) { setErrorMessage(t('selectCourseError')); return; }
+    setErrorMessage(null);
+    setStep('documents');
+  };
+
   const handleCourseSubmit = (e: FormEvent) => {
     e.preventDefault();
-    if (!selectedCourse) { setErrorMessage(t('selectCourseError')); return; }
+    handleContinueToDocuments();
+  };
+
+  const handleFilesSelected = (fileList: FileList | null) => {
+    if (!fileList || fileList.length === 0) return;
+
+    const newDocs: PendingDocument[] = Array.from(fileList).map((file) => ({
+      id: `${file.name}-${file.size}-${Math.random().toString(36).slice(2, 8)}`,
+      file,
+      status: 'uploading',
+    }));
+    setDocuments((prev) => [...prev, ...newDocs]);
+
+    newDocs.forEach((doc) => {
+      uploadDocument(doc.file)
+        .then((uploaded: UploadedDocument) => {
+          setDocuments((prev) =>
+            prev.map((d) =>
+              d.id === doc.id ? { ...d, status: 'done', url: uploaded.url, size: uploaded.size } : d,
+            ),
+          );
+        })
+        .catch((e: unknown) => {
+          setDocuments((prev) =>
+            prev.map((d) =>
+              d.id === doc.id
+                ? { ...d, status: 'error', error: e instanceof Error ? e.message : t('uploadFailed') }
+                : d,
+            ),
+          );
+        });
+    });
+  };
+
+  const removeDocument = (id: string) => {
+    setDocuments((prev) => prev.filter((d) => d.id !== id));
+  };
+
+  const handleDocumentsContinue = () => {
+    if (!selectedCourse) return;
+    if (successfulDocuments.length === 0) {
+      setErrorMessage(t('documentsRequiredError'));
+      return;
+    }
     setErrorMessage(null);
     setStep('payment');
   };
@@ -148,15 +221,20 @@ function CourseEnrollment({
   const handlePaymentSubmit = async () => {
     if (!selectedCourse) return;
     setErrorMessage(null);
-    setStep('processing');
+    setStep('submitting');
     try {
-      await new Promise((res) => window.setTimeout(res, 2800));
+      await new Promise((res) => window.setTimeout(res, 1800));
       await submitEnrollment({
         firstName: learnerProfile.firstName,
         lastName: learnerProfile.lastName,
         email: learnerProfile.email,
         description: `${description.trim()} | Payment simulation: ${paymentReference} via ${paymentMethod}.`,
         course: selectedCourse,
+        documents: successfulDocuments.map((d) => ({
+          name: d.file.name,
+          url: d.url,
+          size: d.size ?? d.file.size,
+        })),
       });
       setStep('receipt');
     } catch (e) {
@@ -165,50 +243,42 @@ function CourseEnrollment({
     }
   };
 
-  const stepMeta: Record<PaymentStep, { label: string; num: number }> = {
+  const stepMeta: Record<EnrollmentStep, { label: string; num: number }> = {
     course:     { label: 'Choose course', num: 1 },
-    payment:    { label: 'Payment',       num: 2 },
-    processing: { label: 'Processing',    num: 3 },
-    receipt:    { label: 'Confirmed',     num: 3 },
+    documents:  { label: 'Documents',     num: 2 },
+    payment:    { label: 'Payment',       num: 3 },
+    submitting: { label: 'Submitting',    num: 4 },
+    receipt:    { label: 'Confirmed',     num: 4 },
   };
 
   const stepKicker = step === 'course'
     ? t('enroll')
+    : step === 'documents'
+    ? t('documents')
     : step === 'payment'
     ? 'Payment'
-    : step === 'processing'
-    ? 'Processing'
-    : 'Confirmed';
+    : step === 'submitting'
+    ? t('submitting')
+    : t('confirmed');
 
   const currentStepNum = stepMeta[step].num;
 
   return (
     <section className="auth-page ce-page">
-      <div className="ce-layout">
-        <aside className="auth-aside">
+      <div className="ce-layout ce-layout--full">
+        <div className="ce-page-header">
           <button type="button" className="auth-back-link" onClick={onBackToLogin}>
             {t('backSignIn')}
           </button>
 
-          <span className="auth-eyebrow">
-            <span className="auth-eyebrow-dot" aria-hidden="true" />
-            {t('firstTimeEnrollment')}
-          </span>
-
-          <h1 className="auth-title">{t('chooseCourse')}</h1>
-          <p className="auth-copy">
-            {t('welcomeLearner')}, {learnerProfile.firstName || t('learnerFallback')}. {t('courseIntro')}
-          </p>
-
-          <ul className="auth-highlights">
-            {tList('enrollmentPoints').map((point) => (
-              <li className="auth-highlight" key={point}>
-                <span className="auth-highlight-mark" aria-hidden="true">✓</span>
-                <span>{point}</span>
-              </li>
-            ))}
-          </ul>
-        </aside>
+          <div className="ce-page-header-text">
+            <span className="auth-eyebrow">
+              <span className="auth-eyebrow-dot" aria-hidden="true" />
+              {t('firstTimeEnrollment')}
+            </span>
+            <h1 className="ce-page-title">{t('chooseCourse')}</h1>
+          </div>
+        </div>
 
         <div className="auth-card ce-card">
           <header className="auth-card-header">
@@ -231,8 +301,8 @@ function CourseEnrollment({
           <nav className="ce-steps" aria-label="Enrollment progress">
             {STEPS.map((s, i) => {
               const done = currentStepNum > i + 1;
-              const active = currentStepNum === i + 1 || (s === 'receipt' && step === 'processing');
-              const labels = { course: 'Choose course', payment: 'Payment', receipt: 'Confirmed' };
+              const active = currentStepNum === i + 1 || (s === 'receipt' && step === 'submitting');
+              const labels = { course: 'Choose course', documents: 'Documents', payment: 'Payment', receipt: 'Confirmed' };
               return (
                 <div
                   key={s}
@@ -247,25 +317,19 @@ function CourseEnrollment({
 
           {step === 'course' && (
             <form className="auth-form" onSubmit={handleCourseSubmit}>
-              <div className="auth-card-intro">
-                <h2>{t('completeEnrollment')}</h2>
-                <p>{t('pickCourse')}</p>
+              <div className="ce-learner-strip">
+                <span className="ce-learner-avatar" aria-hidden="true">
+                  {(learnerProfile.fullName || '?').charAt(0).toUpperCase()}
+                </span>
+                <span className="ce-learner-text">
+                  {t('enrollingAs')} <strong>{learnerProfile.fullName}</strong>
+                  <span className="ce-learner-email"> · {learnerProfile.email || t('noEmail')}</span>
+                </span>
               </div>
 
               {errorMessage && (
                 <div className="auth-feedback auth-feedback-error" role="alert">{errorMessage}</div>
               )}
-
-              <div className="ce-learner-strip">
-                <div>
-                  <span className="ce-learner-label">{t('learner')}</span>
-                  <strong>{learnerProfile.fullName}</strong>
-                </div>
-                <div>
-                  <span className="ce-learner-label">{t('email')}</span>
-                  <strong>{learnerProfile.email || t('noEmail')}</strong>
-                </div>
-              </div>
 
               <div className="ce-section-head">
                 <span>{t('selectCourse')}</span>
@@ -287,29 +351,45 @@ function CourseEnrollment({
                 <div className="ce-courses-grid" role="listbox" aria-label={t('selectCourse')}>
                   {courses.map((course) => {
                     const isSelected = course.name === selectedCourseName;
-                    const fee = getCourseFee(course);
                     return (
-                      <button
+                      <div
                         key={course.name}
-                        type="button"
                         role="option"
                         aria-selected={isSelected}
+                        tabIndex={0}
                         className={`ce-course-card${isSelected ? ' ce-course-card--selected' : ''}`}
                         onClick={() => setSelectedCourseName(course.name)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            setSelectedCourseName(course.name);
+                          }
+                        }}
                       >
-                        <div className="ce-course-card-top">
-                          <span className="ce-course-icon" aria-hidden="true">{getCourseIcon(course.name)}</span>
-                          {course.duration && (
-                            <span className="ce-duration-pill">{course.duration}</span>
-                          )}
-                          {isSelected && <span className="ce-selected-check" aria-hidden="true">✓</span>}
-                        </div>
+                        {isSelected && <span className="ce-selected-check" aria-hidden="true">✓</span>}
+                        <span className="ce-course-icon" aria-hidden="true">{getCourseIcon(course.name)}</span>
                         <div className="ce-course-name">{course.name}</div>
                         {course.description && (
                           <div className="ce-course-desc">{course.description}</div>
                         )}
-                        <div className="ce-course-fee">{formatKwacha(fee)}</div>
-                      </button>
+                        {course.duration && (
+                          <div className="ce-course-meta">
+                            <span className="ce-duration-pill">{course.duration}</span>
+                          </div>
+                        )}
+                        {isSelected && (
+                          <button
+                            type="button"
+                            className="ce-course-apply-btn"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleContinueToDocuments();
+                            }}
+                          >
+                            {t('applyCourse')}
+                          </button>
+                        )}
+                      </div>
                     );
                   })}
                 </div>
@@ -324,15 +404,93 @@ function CourseEnrollment({
                   onChange={(e) => setDescription(e.target.value)}
                 />
               </label>
-
-              <button
-                type="submit"
-                className="auth-submit"
-                disabled={isLoadingCourses || !selectedCourse}
-              >
-                Continue to payment →
-              </button>
             </form>
+          )}
+
+          {step === 'documents' && (
+            <div className="auth-form">
+              <div className="auth-card-intro">
+                <h2>{t('uploadDocumentsTitle')}</h2>
+                <p>{t('uploadDocumentsSubtitle')}</p>
+              </div>
+
+              {errorMessage && (
+                <div className="auth-feedback auth-feedback-error" role="alert">{errorMessage}</div>
+              )}
+
+              <div className="ce-order-summary">
+                <div className="ce-order-row">
+                  <span>{getCourseIcon(selectedCourse?.name ?? '')} {selectedCourse?.name}</span>
+                  <span>{selectedCourse?.duration ?? 'Flexible'}</span>
+                </div>
+              </div>
+
+              <label className="ce-dropzone">
+                <input
+                  type="file"
+                  multiple
+                  accept=".pdf,.png,.jpg,.jpeg,.doc,.docx"
+                  onChange={(e) => {
+                    handleFilesSelected(e.target.files);
+                    e.target.value = '';
+                  }}
+                  hidden
+                />
+                <span className="ce-dropzone-icon" aria-hidden="true">📎</span>
+                <span className="ce-dropzone-text">
+                  <strong>{t('chooseFiles')}</strong>
+                  <span>{t('acceptedFileTypes')}</span>
+                </span>
+              </label>
+
+              {documents.length > 0 && (
+                <ul className="ce-doc-list">
+                  {documents.map((doc) => (
+                    <li key={doc.id} className={`ce-doc-item ce-doc-item--${doc.status}`}>
+                      <span className="ce-doc-icon" aria-hidden="true">
+                        {doc.status === 'done' ? '✓' : doc.status === 'error' ? '!' : '⏳'}
+                      </span>
+                      <span className="ce-doc-info">
+                        <span className="ce-doc-name">{doc.file.name}</span>
+                        <span className="ce-doc-meta">
+                          {doc.status === 'uploading' && t('uploading')}
+                          {doc.status === 'done' && formatFileSize(doc.size ?? doc.file.size)}
+                          {doc.status === 'error' && (doc.error ?? t('uploadFailed'))}
+                        </span>
+                      </span>
+                      <button
+                        type="button"
+                        className="ce-doc-remove"
+                        onClick={() => removeDocument(doc.id)}
+                        aria-label={t('removeFile')}
+                      >
+                        ✕
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              <div className="ce-field-hint">{t('documentsHint')}</div>
+
+              <div className="ce-payment-actions">
+                <button
+                  type="button"
+                  className="ce-back-btn"
+                  onClick={() => { setStep('course'); setErrorMessage(null); }}
+                >
+                  ← {t('editCourse')}
+                </button>
+                <button
+                  type="button"
+                  className="auth-submit ce-pay-btn"
+                  disabled={!canContinueToPayment}
+                  onClick={handleDocumentsContinue}
+                >
+                  Continue to payment →
+                </button>
+              </div>
+            </div>
           )}
 
           {step === 'payment' && (
@@ -350,6 +508,10 @@ function CourseEnrollment({
                 <div className="ce-order-row">
                   <span>{getCourseIcon(selectedCourse?.name ?? '')} {selectedCourse?.name}</span>
                   <span>{selectedCourse?.duration ?? 'Flexible'}</span>
+                </div>
+                <div className="ce-order-row">
+                  <span>{t('documentsSubmitted')}</span>
+                  <span>{successfulDocuments.length}</span>
                 </div>
                 <div className="ce-order-divider" />
                 <div className="ce-order-row ce-order-total">
@@ -489,9 +651,9 @@ function CourseEnrollment({
                 <button
                   type="button"
                   className="ce-back-btn"
-                  onClick={() => { setStep('course'); setErrorMessage(null); }}
+                  onClick={() => { setStep('documents'); setErrorMessage(null); }}
                 >
-                  ← Edit course
+                  ← Edit documents
                 </button>
                 <button
                   type="button"
@@ -508,7 +670,7 @@ function CourseEnrollment({
             </div>
           )}
 
-          {step === 'processing' && (
+          {step === 'submitting' && (
             <div className="ce-processing">
               <div className="ce-processing-ring">
                 <svg viewBox="0 0 64 64" fill="none" aria-hidden="true">
@@ -534,32 +696,27 @@ function CourseEnrollment({
                   ? 'Verifying card details with issuing bank'
                   : 'Validating sponsor voucher code'}
               </p>
-
-              <div className="ce-processing-steps">
-                {['Verifying identity', 'Processing payment', 'Activating dashboard'].map((s, i) => (
-                  <div key={s} className={`ce-proc-step${processingDots > i ? ' ce-proc-step--done' : ''}`}>
-                    <span>{processingDots > i ? '✓' : `${i + 1}`}</span>
-                    {s}
-                  </div>
-                ))}
-              </div>
             </div>
           )}
 
           {step === 'receipt' && (
             <div className="ce-receipt">
               <div className="ce-receipt-badge" aria-hidden="true">✓</div>
-              <h3>Payment confirmed!</h3>
-              <p>Your learner dashboard is now active. Welcome to ZETRC.</p>
+              <h3>{t('enrollmentConfirmedTitle')}</h3>
+              <p>{t('enrollmentConfirmedCopy')}</p>
 
               <div className="ce-receipt-details">
                 <div className="ce-receipt-row">
-                  <span>Course</span>
+                  <span>{t('selectedCourse')}</span>
                   <strong>{selectedCourse?.name}</strong>
                 </div>
                 <div className="ce-receipt-row">
-                  <span>Duration</span>
+                  <span>{t('duration')}</span>
                   <strong>{selectedCourse?.duration ?? 'Flexible'}</strong>
+                </div>
+                <div className="ce-receipt-row">
+                  <span>{t('documentsSubmitted')}</span>
+                  <strong>{successfulDocuments.length}</strong>
                 </div>
                 <div className="ce-receipt-row">
                   <span>Amount paid</span>
@@ -586,7 +743,7 @@ function CourseEnrollment({
                 className="auth-submit"
                 onClick={() => onEnrollmentComplete(selectedCourse!, description, {})}
               >
-                Go to my dashboard →
+                {t('enterDashboard')}
               </button>
             </div>
           )}

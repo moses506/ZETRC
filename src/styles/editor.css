@@ -57,6 +57,91 @@
   border-color: var(--teal-dark);
 }
 
+.toolbar-select {
+  padding: 6px 8px;
+  background: #fff;
+  border: 1px solid rgba(15, 45, 35, 0.16);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  color: #17221d;
+  max-width: 140px;
+}
+
+.toolbar-select-font {
+  max-width: 150px;
+}
+
+.toolbar-select-size {
+  max-width: 72px;
+}
+
+.toolbar-select-block {
+  max-width: 130px;
+}
+
+.toolbar-select:hover {
+  border-color: rgba(6, 67, 31, 0.38);
+}
+
+.toolbar-group-color {
+  align-items: center;
+}
+
+.toolbar-color-control {
+  position: relative;
+}
+
+.toolbar-color-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  line-height: 1;
+  padding: 6px 8px !important;
+}
+
+.toolbar-color-swatch {
+  display: block;
+  width: 18px;
+  height: 4px;
+  border-radius: 2px;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+}
+
+.toolbar-color-popover {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 20;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+  padding: 10px;
+  background: #fff;
+  border: 1px solid rgba(15, 45, 35, 0.16);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(15, 45, 35, 0.18);
+  min-width: 160px;
+}
+
+.toolbar-color-swatch-btn {
+  width: 24px;
+  height: 24px;
+  border-radius: 5px;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  padding: 0 !important;
+  min-width: unset !important;
+}
+
+.toolbar-color-clear {
+  grid-column: 1 / -1;
+  font-size: 12px !important;
+  padding: 4px 6px !important;
+  min-width: unset !important;
+}
+
 .editor-content-wrapper {
   position: relative;
   min-height: 560px;
@@ -93,7 +178,13 @@
 
 /* TipTap Editor Content Styles */
 .ProseMirror {
+  /* The actual contenteditable region — must fill the visible "page" card
+     (.editor-content) itself, otherwise only the first line of text is
+     clickable/focusable and the rest of the card is dead space that looks
+     writable but isn't. */
+  min-height: 800px;
   outline: none;
+  cursor: text;
 }
 
 .ProseMirror p.is-empty::before {
@@ -185,6 +276,17 @@
   text-decoration: line-through;
 }
 
+.ProseMirror a {
+  color: var(--teal-dark, #06431f);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.ProseMirror mark {
+  border-radius: 2px;
+  padding: 0 1px;
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .editor-toolbar {
@@ -207,6 +309,10 @@
     padding: 36px 28px;
     min-height: 640px;
     font-size: 15px;
+  }
+
+  .ProseMirror {
+    min-height: 560px;
   }
 
   .editor-content-wrapper {
@@ -247,6 +353,10 @@
     padding: 28px 18px;
     min-height: 520px;
     font-size: 14px;
+  }
+
+  .ProseMirror {
+    min-height: 460px;
   }
 
   .editor-content-wrapper {

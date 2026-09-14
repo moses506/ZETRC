@@ -1,9 +1,11 @@
-import { useEffect, useMemo, useState, type ChangeEvent, type SyntheticEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type ChangeEvent, type SyntheticEvent } from 'react';
 import '../styles/dashboard.css';
 import type { LearnerEnrollment, LearnerProfile } from '../utils/auth';
 import { resolveApiAssetUrl, type Assignment, submitAssignmentSubmission } from '../utils/api';
 import { useLessons } from '../hooks/useLessons';
 import { useAssignments } from '../hooks/useAssignments';
+import { useCourseModules } from '../hooks/useCourseModules';
+import { useCertificates } from '../hooks/useCertificates';
 import { RichTextEditor } from '../components/RichTextEditor';
 import { useLanguage } from '../i18n/LanguageContext';
 
@@ -14,7 +16,7 @@ type DashboardProps = {
   onRequestProposal: () => void;
 };
 
-type ViewKey = 'dashboard' | 'training' | 'assignments' | 'certificates' | 'library';
+type ViewKey = 'dashboard' | 'mycourse' | 'training' | 'assignments' | 'certificates' | 'library';
 
 type AudioProgressEntry = {
   currentTime: number;
@@ -49,6 +51,12 @@ const audioProgressStorageKey = 'zetrcLessonAudioProgress';
 const audioProgressUpdatedEvent = 'zetrcAudioProgressUpdated';
 const assignmentSubmissionStorageKey = 'zetrcAssignmentSubmissions';
 
+function relativeDateLabel(daysFromNow: number): string {
+  const date = new Date();
+  date.setDate(date.getDate() + daysFromNow);
+  return new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }).format(date);
+}
+
 const modules = [
   { num: 1, name: 'Climate-smart farming basics', desc: 'Understand weather changes and how to adapt', status: 'done' },
   { num: 2, name: 'Soil health & productivity', desc: 'Improve soil using low-cost techniques', status: 'done' },
@@ -58,28 +66,16 @@ const modules = [
 ];
 
 const tasks = [
-  { color: 'amber', text: 'Submit Module 3 field observation', due: 'Due: 16 Apr 2026' },
+  { color: 'amber', text: 'Submit Module 3 field observation', due: `Due: ${relativeDateLabel(2)}` },
   { color: 'green', text: 'Watch crop spacing video lesson', due: 'Recommended today' },
   { color: 'green', text: 'Complete Module 3 quiz', due: 'Unlocks Module 4' },
-  { color: 'gray', text: 'Group feedback session — Cooperatives cohort', due: '20 Apr 2026 at 10:00' },
-];
-
-const certificates = [
-  { name: 'Climate-smart farming basics', status: 'Earned 2 Apr 2026', state: 'earned' },
-  { name: 'Soil health & productivity', status: 'In review', state: 'pending' },
-  { name: 'Crop management', status: 'Locked — complete module first', state: 'locked' },
+  { color: 'gray', text: 'Group feedback session — Cooperatives cohort', due: `${relativeDateLabel(6)} at 10:00` },
 ];
 
 const announcements = [
-  { title: 'Module 4 now available for preview', body: 'Post-harvest handling content has been uploaded. Complete Module 3 to unlock.', date: '12 Apr 2026', type: 'info' },
-  { title: 'Assignment deadline reminder', body: 'Your Module 3 field observation is due in 2 days. Submit via the form or WhatsApp.', date: '14 Apr 2026', type: 'warn' },
-  { title: 'ZETRC Academy — early access open', body: 'Sign up for early access to the full digital learning platform with certifications.', date: '10 Apr 2026', type: 'info' },
-];
-
-const lessonSegments = [
-  { title: 'Spacing and row planning', duration: '12 min', type: 'Video lesson', state: 'current' },
-  { title: 'Field observation checklist', duration: '8 min', type: 'Practical task', state: 'next' },
-  { title: 'Quick crop management quiz', duration: '6 min', type: 'Quiz', state: 'locked' },
+  { title: 'Module 4 now available for preview', body: 'Post-harvest handling content has been uploaded. Complete Module 3 to unlock.', date: relativeDateLabel(0), type: 'info' },
+  { title: 'Assignment deadline reminder', body: 'Your Module 3 field observation is due in 2 days. Submit via the form or WhatsApp.', date: relativeDateLabel(-2), type: 'warn' },
+  { title: 'ZETRC Academy — early access open', body: 'Sign up for early access to the full digital learning platform with certifications.', date: relativeDateLabel(-4), type: 'info' },
 ];
 
 const weekFocus = [
@@ -97,7 +93,7 @@ const resourceCards = [
 const assignmentBoard = [
   {
     title: 'Module 3 field observation',
-    due: 'Due 16 Apr 2026',
+    due: `Due ${relativeDateLabel(2)}`,
     status: 'urgent',
     type: 'Observation report',
     detail: 'Visit one plot, record spacing patterns, and upload 2 photos or 1 short voice note.',
@@ -111,7 +107,7 @@ const assignmentBoard = [
   },
   {
     title: 'Peer discussion reflection',
-    due: '20 Apr 2026',
+    due: relativeDateLabel(6),
     status: 'scheduled',
     type: 'Reflection',
     detail: 'Share one challenge from your field observations and one practice you want to improve.',
@@ -126,36 +122,9 @@ const submissionChecklist = [
 ];
 
 const assignmentActivity = [
-  { title: 'Module 2 soil worksheet', meta: 'Reviewed · 11 Apr 2026', state: 'done' },
+  { title: 'Module 2 soil worksheet', meta: `Reviewed · ${relativeDateLabel(-3)}`, state: 'done' },
   { title: 'Water use practice note', meta: 'Submitted · awaiting feedback', state: 'pending' },
   { title: 'Crop management observation', meta: 'Not submitted yet', state: 'current' },
-];
-
-const certificateStats = [
-  { label: 'Earned certificates', value: '1' },
-  { label: 'In review', value: '1' },
-  { label: 'Remaining', value: '3' },
-];
-
-const certificateTimeline = [
-  {
-    title: 'Climate-smart farming basics',
-    status: 'earned',
-    meta: 'Issued on 2 Apr 2026',
-    detail: 'Completed all lessons, quiz, and field submission requirements.',
-  },
-  {
-    title: 'Soil health & productivity',
-    status: 'review',
-    meta: 'Assessment under review',
-    detail: 'Your last submission has been received and is waiting for facilitator approval.',
-  },
-  {
-    title: 'Crop management',
-    status: 'locked',
-    meta: 'Complete Module 3 first',
-    detail: 'Finish the current lesson path and assignment to unlock this certificate.',
-  },
 ];
 
 const certificateBenefits = [
@@ -164,76 +133,17 @@ const certificateBenefits = [
   'Locked certificates become available automatically as modules are completed',
 ];
 
-const libraryHighlights = [
-  { label: 'PDF modules', value: '2' },
-  { label: 'Audio lessons', value: '2' },
-  { label: 'Video slots', value: '2' },
-];
+type LibraryItem = {
+  title: string;
+  module: string;
+  language: string;
+  format: 'PDF' | 'Audio' | 'Video';
+  detail: string;
+  href: string;
+  action: string;
+  state: 'ready' | 'pending';
+};
 
-const learningLibrary = [
-  {
-    title: 'Soyabean value addition',
-    module: 'Module 1',
-    language: 'English',
-    format: 'PDF',
-    detail: 'English PDF module using the exact file you added to the modules folder.',
-    href: '/modules/pdf/english/TESTING%20MODULE%20%F0%9F%8C%B1%20MODULE%201%20SOYABEAN%20VALUE%20ADDITION.pdf',
-    action: 'Open PDF',
-    state: 'ready',
-  },
-  {
-    title: 'PHUNZIRO Mopangira Soyabeans',
-    module: 'Module 1',
-    language: 'Nyanja',
-    format: 'PDF',
-    detail: 'Nyanja PDF module using the exact file you added to the modules folder.',
-    href: '/modules/pdf/nyanja/PHUNZIRO%20Mopangira%20Soyabeans.pdf',
-    action: 'Open PDF',
-    state: 'ready',
-  },
-  {
-    title: 'English module audio',
-    module: 'Module 1',
-    language: 'English',
-    format: 'Audio',
-    detail: 'English MP3 audio from the file you just added.',
-    href: '/modules/audio/english/k%201.mp3',
-    action: 'Play audio',
-    state: 'ready',
-  },
-  {
-    title: 'Nyanja module audio',
-    module: 'Module 1',
-    language: 'Nyanja',
-    format: 'Audio',
-    detail: 'Nyanja MP3 audio from the file you just added.',
-    href: '/modules/audio/nyanja/k2.mp3',
-    action: 'Play audio',
-    state: 'ready',
-  },
-  {
-    title: 'English video lesson slot',
-    module: 'Module 1',
-    language: 'English',
-    format: 'Video',
-    detail: 'Folder prepared for MP4 lesson uploads and dashboard linking.',
-    href: '/modules/video/english/README.md',
-    action: 'View note',
-    state: 'pending',
-  },
-  {
-    title: 'Nyanja video lesson slot',
-    module: 'Module 1',
-    language: 'Nyanja',
-    format: 'Video',
-    detail: 'Malo okonzeka kuti muike mavidiyo a maphunziro a Nyanja.',
-    href: '/modules/video/nyanja/README.md',
-    action: 'View note',
-    state: 'pending',
-  },
-];
-
-type LibraryItem = (typeof learningLibrary)[number];
 type TrainingModuleItem = {
   num: number;
   name: string;
@@ -242,13 +152,13 @@ type TrainingModuleItem = {
   resources: LibraryItem[];
 };
 
-const trainingModuleMap = [
+const trainingModuleMap: TrainingModuleItem[] = [
   {
     num: 1,
-    name: 'Soyabean value addition',
-    desc: 'Open the English and Nyanja PDF modules plus both audio lessons.',
-    status: 'active',
-    resources: learningLibrary.slice(0, 4),
+    name: 'No modules yet',
+    desc: 'Live modules will appear here once lesson content is published.',
+    status: 'locked',
+    resources: [],
   },
   {
     num: 2,
@@ -280,6 +190,124 @@ function buildLessonModuleRows(lessons: { name: string; module: string; introduc
     desc: lesson.introduction || lesson.summary || 'Lesson content is available in the dashboard.',
     status: index === 0 ? 'active' : index < 2 ? 'done' : 'locked',
   }));
+}
+
+function getAudioCandidates(href: string): string[] {
+  if (!href) {
+    return [];
+  }
+
+  const baseCandidates = href
+    .split(/[\n,]/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+  const normalizedCandidates = baseCandidates.length > 0 ? baseCandidates : [href];
+  const expandedCandidates = normalizedCandidates.flatMap((candidate) => {
+    const normalizedHref = candidate.toLowerCase();
+
+    if (normalizedHref.includes('.amr')) {
+      return [
+        candidate.replace(/\.amr(\?|$)/i, '.mp3$1'),
+        candidate.replace(/\.amr(\?|$)/i, '.m4a$1'),
+        candidate,
+      ];
+    }
+
+    return [candidate];
+  });
+
+  return [...new Set(expandedCandidates)];
+}
+
+function isBrowserPlayableAudio(href: string): boolean {
+  const normalizedHref = href.toLowerCase();
+  return ['.mp3', '.wav', '.ogg', '.m4a', '.aac'].some((ext) => normalizedHref.includes(ext));
+}
+
+function getAudioMimeType(href: string): string | undefined {
+  const normalizedHref = href.toLowerCase();
+
+  if (normalizedHref.includes('.mp3')) {
+    return 'audio/mpeg';
+  }
+
+  if (normalizedHref.includes('.wav')) {
+    return 'audio/wav';
+  }
+
+  if (normalizedHref.includes('.ogg')) {
+    return 'audio/ogg';
+  }
+
+  if (normalizedHref.includes('.m4a')) {
+    return 'audio/mp4';
+  }
+
+  if (normalizedHref.includes('.aac')) {
+    return 'audio/aac';
+  }
+
+  return undefined;
+}
+
+function normalizeCertificateState(status: string): 'earned' | 'pending' | 'locked' {
+  const normalized = status.toLowerCase();
+  if (normalized.includes('earn')) {
+    return 'earned';
+  }
+  if (normalized.includes('review') || normalized.includes('pending')) {
+    return 'pending';
+  }
+  return 'locked';
+}
+
+function certificateStatusLabel(cert: { status: string; issuedDate: string }): string {
+  const state = normalizeCertificateState(cert.status);
+  if (state === 'earned') {
+    return cert.issuedDate ? `Earned ${cert.issuedDate}` : 'Earned';
+  }
+  if (state === 'pending') {
+    return 'In review';
+  }
+  return 'Locked';
+}
+
+function buildLessonResources(lesson: {
+  name: string;
+  module: string;
+  summary: string;
+  attachments: string;
+  audioFiles: string;
+}): LibraryItem[] {
+  const resources: LibraryItem[] = [];
+
+  if (lesson.attachments) {
+    resources.push({
+      title: `${lesson.name} PDF`,
+      module: lesson.module || lesson.name,
+      language: 'API',
+      format: 'PDF',
+      detail: lesson.summary || 'Lesson attachment from the training API.',
+      href: resolveApiAssetUrl(lesson.attachments),
+      action: 'Open PDF',
+      state: 'ready',
+    });
+  }
+
+  if (lesson.audioFiles) {
+    resources.push({
+      title: `${lesson.name} Audio`,
+      module: lesson.module || lesson.name,
+      language: 'API',
+      format: 'Audio',
+      detail: lesson.summary || 'Lesson audio from the training API.',
+      href: resolveApiAssetUrl(lesson.audioFiles),
+      action: 'Play audio',
+      state: 'ready',
+    });
+  }
+
+  return resources;
 }
 
 function readAudioProgress(): Record<string, AudioProgressEntry> {
@@ -333,6 +361,29 @@ function formatAssignmentDate(value: string): string {
     month: 'short',
     year: 'numeric',
   }).format(parsed);
+}
+
+function formatTodayLong(): string {
+  return new Intl.DateTimeFormat('en-GB', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  }).format(new Date());
+}
+
+function getTimeOfDayGreeting(): string {
+  const hour = new Date().getHours();
+
+  if (hour < 12) {
+    return 'Good morning';
+  }
+
+  if (hour < 17) {
+    return 'Good afternoon';
+  }
+
+  return 'Good evening';
 }
 
 function readAssignmentSubmissions(): Record<string, AssignmentSubmissionEntry> {
@@ -408,6 +459,15 @@ function toAssignmentStatus(status: string): 'urgent' | 'open' | 'scheduled' {
   return 'urgent';
 }
 
+function BellIcon() {
+  return (
+    <svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <path d="M8 1.5c-2 0-3.5 1.6-3.5 3.6v2.4c0 .5-.2 1-.6 1.4l-.7.7c-.5.5-.1 1.4.6 1.4h8.4c.7 0 1.1-.9.6-1.4l-.7-.7c-.4-.4-.6-.9-.6-1.4V5.1c0-2-1.5-3.6-3.5-3.6z" strokeLinejoin="round" />
+      <path d="M6.5 13.2a1.5 1.5 0 003 0" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 function ZetrcIcon({ size = 22 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 22 22" fill="none">
@@ -419,9 +479,19 @@ function ZetrcIcon({ size = 22 }: { size?: number }) {
 }
 
 function ModuleStatusBadge({ status }: { status: string }) {
-  const map: Record<string, string> = { done: 'badge-done', active: 'badge-active', locked: 'badge-locked' };
-  const label: Record<string, string> = { done: 'Done', active: 'In progress', locked: 'Locked' };
-  return <span className={`mod-badge ${map[status]}`}>{label[status]}</span>;
+  const map: Record<string, string> = {
+    done: 'badge-done',
+    active: 'badge-active',
+    available: 'badge-available',
+    locked: 'badge-locked',
+  };
+  const label: Record<string, string> = {
+    done: 'Done',
+    active: 'In progress',
+    available: 'Available',
+    locked: 'Locked',
+  };
+  return <span className={`mod-badge ${map[status] ?? 'badge-available'}`}>{label[status] ?? 'Available'}</span>;
 }
 
 function ModuleNumber({ num, status }: { num: number; status: string }) {
@@ -452,15 +522,18 @@ function ProgressRing({ pct }: { pct: number }) {
 function DashboardOverview({
   liveModules,
   lessons,
+  certificates,
 }: {
   liveModules: { num: number; name: string; desc: string; status: string }[];
   lessons: {
     name: string;
     module: string;
+    summary: string;
     attachments: string;
     audioFiles: string;
     keyPoints: string[];
   }[];
+  certificates: { name: string; course: string; status: string; issuedDate: string }[];
 }) {
   const [savedAudioProgress, setSavedAudioProgress] = useState<Record<string, AudioProgressEntry>>(
     () => readAudioProgress(),
@@ -471,6 +544,11 @@ function DashboardOverview({
   const totalModules = moduleNames.length;
   const audioReadyCount = lessons.filter((lesson) => lesson.audioFiles).length;
   const keyPointCount = lessons.reduce((total, lesson) => total + lesson.keyPoints.length, 0);
+  const libraryItems = lessons.flatMap((lesson) => buildLessonResources(lesson));
+  const libraryHighlights = [
+    { label: 'PDF modules', value: String(libraryItems.filter((item) => item.format === 'PDF').length) },
+    { label: 'Audio lessons', value: String(libraryItems.filter((item) => item.format === 'Audio').length) },
+  ];
   const getAudioProgressKey = (lesson: { name: string; module: string; audioFiles: string }) => {
     const moduleName = lesson.module || lesson.name;
     const href = resolveApiAssetUrl(lesson.audioFiles);
@@ -618,37 +696,31 @@ function DashboardOverview({
           <div className="card-header">
             <span className="card-title">Certificates</span>
           </div>
-          <div className="cert-list">
-            {certificates.map((c, i) => (
-              <div className={`cert-row ${c.state !== 'earned' ? 'cert-dim' : ''}`} key={i}>
-                <div className={`cert-icon-wrap ${c.state === 'earned' ? 'icon-earned' : 'icon-locked'}`}>
-                  <CertIcon earned={c.state === 'earned'} />
-                </div>
-                <div className="cert-info">
-                  <div className="cert-name">{c.name}</div>
-                  <div className="cert-status">{c.status}</div>
-                </div>
-                <button className={`cert-btn ${c.state !== 'earned' ? 'cert-btn-locked' : ''}`}>
-                  {c.state === 'earned' ? 'Download' : c.state === 'pending' ? 'Pending' : 'Locked'}
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="card">
-          <div className="card-header">
-            <span className="card-title">Announcements</span>
-          </div>
-          <div className="announce-list">
-            {announcements.map((a, i) => (
-              <div className={`announce-row ${a.type === 'warn' ? 'announce-warn' : 'announce-info'}`} key={i}>
-                <div className="announce-title">{a.title}</div>
-                <div className="announce-body">{a.body}</div>
-                <div className="announce-date">{a.date}</div>
-              </div>
-            ))}
-          </div>
+          {certificates.length === 0 ? (
+            <div className="training-audio-note">
+              No certificates yet — they&apos;ll appear here once a course is completed.
+            </div>
+          ) : (
+            <div className="cert-list">
+              {certificates.map((c) => {
+                const state = normalizeCertificateState(c.status);
+                return (
+                  <div className={`cert-row ${state !== 'earned' ? 'cert-dim' : ''}`} key={c.name}>
+                    <div className={`cert-icon-wrap ${state === 'earned' ? 'icon-earned' : 'icon-locked'}`}>
+                      <CertIcon earned={state === 'earned'} />
+                    </div>
+                    <div className="cert-info">
+                      <div className="cert-name">{c.course}</div>
+                      <div className="cert-status">{certificateStatusLabel(c)}</div>
+                    </div>
+                    <button className={`cert-btn ${state !== 'earned' ? 'cert-btn-locked' : ''}`}>
+                      {state === 'earned' ? 'Download' : state === 'pending' ? 'Pending' : 'Locked'}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
 
@@ -656,7 +728,7 @@ function DashboardOverview({
         <div className="card library-preview-card">
           <div className="card-header">
             <span className="card-title">Learning library</span>
-            <span className="card-link">English + Nyanja</span>
+            <span className="card-link">{libraryItems.length} item{libraryItems.length === 1 ? '' : 's'}</span>
           </div>
           <div className="library-highlight-grid">
             {libraryHighlights.map((item) => (
@@ -666,56 +738,134 @@ function DashboardOverview({
               </div>
             ))}
           </div>
-          <div className="library-preview-list">
-            {learningLibrary.slice(0, 4).map((item) => (
-              <article className="library-preview-row" key={`${item.title}-${item.language}`}>
-                <div>
-                  <div className="library-preview-meta">
-                    <span className={`media-pill media-${item.format.toLowerCase()}`}>{item.format}</span>
-                    <span>{item.language}</span>
+          {libraryItems.length === 0 ? (
+            <div className="training-audio-note">
+              No PDF or audio lessons have been published yet.
+            </div>
+          ) : (
+            <div className="library-preview-list">
+              {libraryItems.slice(0, 4).map((item) => (
+                <article className="library-preview-row" key={`${item.title}-${item.href}`}>
+                  <div>
+                    <div className="library-preview-meta">
+                      <span className={`media-pill media-${item.format.toLowerCase()}`}>{item.format}</span>
+                      <span>{item.module}</span>
+                    </div>
+                    <h3>{item.title}</h3>
                   </div>
-                  <h3>{item.title}</h3>
-                </div>
-                {item.format === 'PDF' ? (
-                  <iframe
-                    className="library-pdf-frame library-pdf-preview"
-                    src={item.href}
-                    title={item.title}
-                  />
-                ) : item.format === 'Audio' ? (
-                  <audio className="library-audio-player library-audio-preview" controls preload="none">
-                    <source src={item.href} type="audio/mpeg" />
-                    Your browser does not support audio playback.
-                  </audio>
-                ) : (
-                  <a className="library-link-btn" href={item.href} target="_blank" rel="noreferrer">
-                    {item.action}
-                  </a>
-                )}
-              </article>
-            ))}
-          </div>
+                  {item.format === 'PDF' ? (
+                    <a className="library-link-btn" href={item.href} target="_blank" rel="noreferrer">
+                      Open PDF
+                    </a>
+                  ) : isBrowserPlayableAudio(item.href) ? (
+                    <audio className="library-audio-player library-audio-preview" controls preload="none">
+                      {getAudioCandidates(item.href).map((candidate) => (
+                        <source key={candidate} src={candidate} type={getAudioMimeType(candidate)} />
+                      ))}
+                      Your browser does not support audio playback.
+                    </audio>
+                  ) : (
+                    <a className="library-link-btn" href={item.href} target="_blank" rel="noreferrer">
+                      Download audio
+                    </a>
+                  )}
+                </article>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </>
   );
 }
 
-function LibraryView() {
+function MyCourseView({
+  learnerEnrollment,
+  courseModules,
+  courseModulesLoading,
+}: {
+  learnerEnrollment: LearnerEnrollment | null;
+  courseModules: { name: string; title: string; description: string }[];
+  courseModulesLoading: boolean;
+}) {
+  return (
+    <div className="mycourse-view">
+      <div className="card enrolled-course-card">
+        <div className="card-header">
+          <span className="card-title">Your course</span>
+          {learnerEnrollment ? (
+            <span className="card-link">{learnerEnrollment.duration || 'Flexible'}</span>
+          ) : null}
+        </div>
+        {learnerEnrollment ? (
+          <>
+            <h2 className="enrolled-course-name">{learnerEnrollment.courseName}</h2>
+            {learnerEnrollment.description ? (
+              <p className="enrolled-course-desc">{learnerEnrollment.description}</p>
+            ) : null}
+            <div className="module-list">
+              {courseModulesLoading ? (
+                <div className="training-audio-note">Loading modules for this course...</div>
+              ) : courseModules.length > 0 ? (
+                courseModules.map((m, i) => (
+                  <div className="module-row" key={m.name || m.title}>
+                    <ModuleNumber num={i + 1} status="active" />
+                    <div className="mod-info">
+                      <div className="mod-name">{m.title}</div>
+                      <div className="mod-desc">{m.description}</div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="training-audio-note">
+                  No modules have been added to this course yet.
+                </div>
+              )}
+            </div>
+          </>
+        ) : (
+          <div className="training-audio-note">
+            You haven&apos;t applied for a course yet. Enroll to see it here.
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function LibraryView({
+  lessons,
+}: {
+  lessons: {
+    name: string;
+    module: string;
+    summary: string;
+    attachments: string;
+    audioFiles: string;
+  }[];
+}) {
+  const libraryItems = lessons.flatMap((lesson) => buildLessonResources(lesson));
+  const pdfCount = libraryItems.filter((item) => item.format === 'PDF').length;
+  const audioCount = libraryItems.filter((item) => item.format === 'Audio').length;
+  const highlights = [
+    { label: 'PDF modules', value: String(pdfCount) },
+    { label: 'Audio lessons', value: String(audioCount) },
+  ];
+
   return (
     <div className="library-view">
       <section className="library-hero-card">
         <div className="library-hero-copy">
           <span className="training-kicker">Learning library</span>
-          <h2>Modules, audio, and video resources in English and Nyanja</h2>
+          <h2>PDF and audio lessons from your training modules</h2>
           <p>
-            This library brings together downloadable PDF modules, mobile-friendly audio lessons,
-            and prepared video slots so learners can study in the language and format that works best.
+            Resources here come straight from published lesson content — as PDFs and audio
+            lessons are added to a module, they show up here automatically.
           </p>
         </div>
 
         <div className="library-summary-grid">
-          {libraryHighlights.map((item) => (
+          {highlights.map((item) => (
             <div className="library-summary-pill" key={item.label}>
               <span>{item.label}</span>
               <strong>{item.value}</strong>
@@ -728,81 +878,94 @@ function LibraryView() {
         <div className="library-board-card">
           <div className="card-header">
             <span className="card-title">Available resources</span>
-            <span className="card-link">Stored in /public/modules</span>
+            <span className="card-link">
+              {libraryItems.length} item{libraryItems.length === 1 ? '' : 's'}
+            </span>
           </div>
 
           <div className="library-board-list">
-            {learningLibrary.map((item) => (
-              <article className={`library-board-row row-${item.state}`} key={`${item.title}-${item.language}`}>
-                <div className="library-board-top">
-                  <div>
-                    <div className="library-row-tags">
-                      <span className={`media-pill media-${item.format.toLowerCase()}`}>{item.format}</span>
-                      <span className="language-pill">{item.language}</span>
-                      <span className="module-pill">{item.module}</span>
+            {libraryItems.length === 0 ? (
+              <div className="training-audio-note">
+                No PDF or audio lessons have been published yet. They&apos;ll show up here as
+                soon as a module has an attachment or audio file.
+              </div>
+            ) : (
+              libraryItems.map((item) => (
+                <article className="library-board-row" key={`${item.title}-${item.href}`}>
+                  <div className="library-board-top">
+                    <div>
+                      <div className="library-row-tags">
+                        <span className={`media-pill media-${item.format.toLowerCase()}`}>{item.format}</span>
+                        <span className="module-pill">{item.module}</span>
+                      </div>
+                      <h3>{item.title}</h3>
                     </div>
-                    <h3>{item.title}</h3>
+                    <span className="library-state state-ready">Ready</span>
                   </div>
-                  <span className={`library-state state-${item.state}`}>
-                    {item.state === 'ready' ? 'Ready' : 'Waiting for upload'}
-                  </span>
-                </div>
-                <p>{item.detail}</p>
-                <div className="library-board-footer">
-                  <span>{item.format === 'Video' ? 'Prepared folder entry' : 'Static library asset'}</span>
-                  {item.format === 'PDF' ? (
-                    <iframe
-                      className="library-pdf-frame"
-                      src={item.href}
-                      title={item.title}
-                    />
-                  ) : item.format === 'Audio' ? (
-                    <audio className="library-audio-player" controls preload="none">
-                      <source src={item.href} type="audio/mpeg" />
-                      Your browser does not support audio playback.
-                    </audio>
-                  ) : (
-                    <a className="btn-primary-top assignment-inline-btn" href={item.href} target="_blank" rel="noreferrer">
-                      {item.action} →
-                    </a>
-                  )}
-                </div>
-              </article>
-            ))}
+                  <p>{item.detail}</p>
+                  <div className="library-board-footer">
+                    <span>From the training API</span>
+                    {item.format === 'PDF' ? (
+                      <div className="training-resource-actions">
+                        <a
+                          className="btn-primary-top assignment-inline-btn"
+                          href={item.href}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          Open PDF →
+                        </a>
+                        <a className="library-link-btn" href={item.href} download>
+                          Download PDF
+                        </a>
+                      </div>
+                    ) : (
+                      <div className="training-resource-actions">
+                        {isBrowserPlayableAudio(item.href) ? (
+                          <audio className="library-audio-player" controls preload="none">
+                            {getAudioCandidates(item.href).map((candidate) => (
+                              <source key={candidate} src={candidate} type={getAudioMimeType(candidate)} />
+                            ))}
+                            Your browser does not support audio playback.
+                          </audio>
+                        ) : (
+                          <div className="training-audio-note">
+                            This audio file uses a protected or unsupported format for in-browser
+                            playback. Download it below to listen externally.
+                          </div>
+                        )}
+                        <a className="library-link-btn" href={item.href} target="_blank" rel="noreferrer">
+                          Download audio
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                </article>
+              ))
+            )}
           </div>
         </div>
 
         <div className="library-side-stack">
           <div className="library-side-card">
             <div className="card-header">
-              <span className="card-title">Folder structure</span>
-            </div>
-            <div className="library-path-list">
-              <div className="library-path-item">public/modules/pdf/english</div>
-              <div className="library-path-item">public/modules/pdf/nyanja</div>
-              <div className="library-path-item">public/modules/audio/english</div>
-              <div className="library-path-item">public/modules/audio/nyanja</div>
-              <div className="library-path-item">public/modules/video/english</div>
-              <div className="library-path-item">public/modules/video/nyanja</div>
-            </div>
-          </div>
-
-          <div className="library-side-card">
-            <div className="card-header">
-              <span className="card-title">Next content step</span>
+              <span className="card-title">How this library works</span>
             </div>
             <div className="certificate-benefits-list">
               <div className="certificate-benefit-item">
                 <span className="login-check">✓</span>
-                <span>Replace the starter PDFs with your full bilingual training manuals.</span>
+                <span>
+                  PDFs and audio are uploaded through the backend and linked to a lesson&apos;s
+                  attachment/audio fields.
+                </span>
               </div>
               <div className="certificate-benefit-item">
                 <span className="login-check">✓</span>
-                <span>Drop MP4 or WebM files into the prepared video folders to activate lesson playback.</span>
+                <span>Every published lesson with a file appears here automatically — no manual list to maintain.</span>
               </div>
               <div className="certificate-benefit-item">
                 <span className="login-check">✓</span>
-                <span>Keep matching English and Nyanja filenames so the dashboard stays organized.</span>
+                <span>Video lessons aren&apos;t supported yet — only PDF and audio attachments are shown.</span>
               </div>
             </div>
           </div>
@@ -814,6 +977,8 @@ function LibraryView() {
 
 function MyTrainingView({
   lessons,
+  assignments,
+  onViewAssignments,
 }: {
   lessons: {
     id?: string | number;
@@ -826,6 +991,8 @@ function MyTrainingView({
     audioFiles: string;
     keyPoints: string[];
   }[];
+  assignments: Assignment[];
+  onViewAssignments: () => void;
 }) {
   const [audioProgress, setAudioProgress] = useState<Record<string, AudioProgressEntry>>(
     () => readAudioProgress(),
@@ -833,122 +1000,47 @@ function MyTrainingView({
   const [audioBlobUrls, setAudioBlobUrls] = useState<Record<string, AudioBlobEntry>>({});
   const [audioCacheStatus, setAudioCacheStatus] = useState<Record<string, AudioCacheStatus>>({});
 
-  const getAudioCandidates = (href: string): string[] => {
-    if (!href) {
-      return [];
-    }
+  const liveLessonSegments = useMemo(
+    () =>
+      lessons.slice(0, 3).map((lesson, index) => ({
+        title: lesson.name,
+        duration: lesson.module || `Lesson ${index + 1}`,
+        type: lesson.keyPoints.length > 0 ? 'Key lesson' : 'Lesson',
+        state: index === 0 ? 'current' : index === 1 ? 'next' : 'locked',
+      })),
+    [lessons],
+  );
+  const liveModuleMap: TrainingModuleItem[] = useMemo(() => {
+    const withResources = lessons.slice(0, 4).map((lesson, index) => ({
+      num: index + 1,
+      name: lesson.module || lesson.name,
+      desc: lesson.introduction || lesson.summary || 'Lesson content available.',
+      resources: buildLessonResources(lesson),
+    }));
 
-    const baseCandidates = href
-      .split(/[\n,]/)
-      .map((item) => item.trim())
-      .filter(Boolean);
-    const normalizedCandidates = baseCandidates.length > 0 ? baseCandidates : [href];
-    const expandedCandidates = normalizedCandidates.flatMap((candidate) => {
-      const normalizedHref = candidate.toLowerCase();
+    // Default to the first module that actually has playable audio, so
+    // landing on this page shows working audio right away instead of
+    // whichever lesson happens to be first (which may have none).
+    const audioIndex = withResources.findIndex((m) =>
+      m.resources.some((r) => r.format === 'Audio'),
+    );
+    const activeIndex = audioIndex >= 0 ? audioIndex : 0;
 
-      if (normalizedHref.includes('.amr')) {
-        return [
-          candidate.replace(/\.amr(\?|$)/i, '.mp3$1'),
-          candidate.replace(/\.amr(\?|$)/i, '.m4a$1'),
-          candidate,
-        ];
-      }
-
-      return [candidate];
-    });
-
-    return [...new Set(expandedCandidates)];
-  };
-
-  const isBrowserPlayableAudio = (href: string): boolean => {
-    const normalizedHref = href.toLowerCase();
-    return ['.mp3', '.wav', '.ogg', '.m4a', '.aac'].some((ext) => normalizedHref.includes(ext));
-  };
-
-  const getAudioMimeType = (href: string): string | undefined => {
-    const normalizedHref = href.toLowerCase();
-
-    if (normalizedHref.includes('.mp3')) {
-      return 'audio/mpeg';
-    }
-
-    if (normalizedHref.includes('.wav')) {
-      return 'audio/wav';
-    }
-
-    if (normalizedHref.includes('.ogg')) {
-      return 'audio/ogg';
-    }
-
-    if (normalizedHref.includes('.m4a')) {
-      return 'audio/mp4';
-    }
-
-    if (normalizedHref.includes('.aac')) {
-      return 'audio/aac';
-    }
-
-    return undefined;
-  };
-
-  const toLessonResources = (lesson: {
-    name: string;
-    module: string;
-    summary: string;
-    attachments: string;
-    audioFiles: string;
-  }): LibraryItem[] => {
-    const resources: LibraryItem[] = [];
-
-    if (lesson.attachments) {
-      resources.push({
-        title: `${lesson.name} PDF`,
-        module: lesson.module || lesson.name,
-        language: 'API',
-        format: 'PDF',
-        detail: lesson.summary || 'Lesson attachment from the training API.',
-        href: resolveApiAssetUrl(lesson.attachments),
-        action: 'Open PDF',
-        state: 'ready',
-      });
-    }
-
-    if (lesson.audioFiles) {
-      resources.push({
-        title: `${lesson.name} Audio`,
-        module: lesson.module || lesson.name,
-        language: 'API',
-        format: 'Audio',
-        detail: lesson.summary || 'Lesson audio from the training API.',
-        href: resolveApiAssetUrl(lesson.audioFiles),
-        action: 'Play audio',
-        state: 'ready',
-      });
-    }
-
-    return resources;
-  };
-
-  const liveLessonSegments = lessons.slice(0, 3).map((lesson, index) => ({
-    title: lesson.name,
-    duration: lesson.module || `Lesson ${index + 1}`,
-    type: lesson.keyPoints.length > 0 ? 'Key lesson' : 'Lesson',
-    state: index === 0 ? 'current' : index === 1 ? 'next' : 'locked',
-  }));
-  const liveModuleMap: TrainingModuleItem[] = lessons.slice(0, 4).map((lesson, index) => ({
-    num: index + 1,
-    name: lesson.module || lesson.name,
-    desc: lesson.introduction || lesson.summary || 'Lesson content available.',
-    status: index === 0 ? 'active' : 'locked',
-    resources: toLessonResources(lesson),
-  }));
-  const firstLesson = lessons[0] ?? null;
+    return withResources.map((m, index) => ({
+      ...m,
+      status: index === activeIndex ? 'active' : 'available',
+    }));
+  }, [lessons]);
+  const activeModuleIndex = liveModuleMap.findIndex((m) => m.status === 'active');
+  const firstLesson = lessons[activeModuleIndex >= 0 ? activeModuleIndex : 0] ?? null;
+  const currentAssignment = assignments[0] ?? null;
   const [selectedModule, setSelectedModule] = useState<TrainingModuleItem>(
-    liveModuleMap[0] ?? trainingModuleMap[0],
+    liveModuleMap.find((m) => m.status === 'active') ?? liveModuleMap[0] ?? trainingModuleMap[0],
   );
   useEffect(() => {
-    if (liveModuleMap[0]) {
-      setSelectedModule(liveModuleMap[0]);
+    const defaultModule = liveModuleMap.find((m) => m.status === 'active') ?? liveModuleMap[0];
+    if (defaultModule) {
+      setSelectedModule(defaultModule);
     }
   }, [lessons]);
   const buildAudioKey = (moduleName: string, href: string) => `${moduleName}::${href}`;
@@ -1066,7 +1158,7 @@ function MyTrainingView({
         href: selectedModuleAudio.href,
         title: selectedModuleAudio.title,
       }
-    : allAudioResources[0] ?? null;
+    : null;
   const currentAudioProgress = currentAudioDescriptor
     ? audioProgress[buildAudioKey(currentAudioDescriptor.moduleName, currentAudioDescriptor.href)] ?? null
     : null;
@@ -1138,17 +1230,17 @@ function MyTrainingView({
 
   return (
     <div className="training-view">
-      <section className="training-hero-card">
-        <div className="training-hero-copy">
+      <section className="dash-training-hero">
+        <div className="dash-training-hero-copy">
           <span className="training-kicker">My training</span>
           <h2>{firstLesson?.module || 'My live training content'}</h2>
           <p>
             {firstLesson?.introduction ||
               'Your live lessons from the training API will appear here as soon as content is available.'}
           </p>
-          <div className="training-meta-row">
+          <div className="dash-training-meta-row">
             {weekFocus.map((item) => (
-              <div className="training-meta-pill" key={item.label}>
+              <div className="dash-training-meta-pill" key={item.label}>
                 <span>{item.label}</span>
                 <strong>{item.value}</strong>
               </div>
@@ -1156,17 +1248,17 @@ function MyTrainingView({
           </div>
         </div>
 
-        <div className="training-hero-progress">
-          <div className="lesson-preview-card">
-            <div className="lesson-preview-top">
+        <div className="dash-training-hero-progress">
+          <div className="dash-lesson-preview-card">
+            <div className="dash-lesson-preview-top">
               <span className="card-tagline">Now learning</span>
-              <span className="lesson-duration">{firstLesson?.module || 'Lesson content'}</span>
+              <span className="dash-lesson-duration">{firstLesson?.module || 'Lesson content'}</span>
             </div>
             <h3>{firstLesson?.name || 'No lesson available yet'}</h3>
             <p>{firstLesson?.summary || 'Continue from your last checkpoint and prepare for the next lesson.'}</p>
-            <div className="lesson-progress">
-              <div className="lesson-progress-bar">
-                <div className="lesson-progress-fill" style={{ width: `${currentAudioPercent}%` }} />
+            <div className="dash-lesson-progress">
+              <div className="dash-lesson-progress-bar">
+                <div className="dash-lesson-progress-fill" style={{ width: `${currentAudioPercent}%` }} />
               </div>
               <span>
                 {currentAudioDescriptor
@@ -1188,6 +1280,7 @@ function MyTrainingView({
             <button
               className="btn-primary-top"
               type="button"
+              disabled={!currentAudioDescriptor}
               onClick={() => {
                 const audioElement = document.querySelector<HTMLAudioElement>('.training-audio-player');
                 audioElement?.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -1213,27 +1306,33 @@ function MyTrainingView({
       <section className="training-main-grid">
         <div className="training-lessons-card">
           <div className="card-header">
-            <span className="card-title">This week&apos;s learning path</span>
-            <span className="card-link">Week 3</span>
+            <span className="card-title">Your learning path</span>
+            <span className="card-link">
+              {lessons.length} lesson{lessons.length === 1 ? '' : 's'}
+            </span>
           </div>
           <div className="lesson-list">
-            {(liveLessonSegments.length > 0 ? liveLessonSegments : lessonSegments).map((lesson) => (
-              <article className={`lesson-row lesson-${lesson.state}`} key={lesson.title}>
-                <div className="lesson-index">
-                  {lesson.state === 'current' ? '▶' : lesson.state === 'next' ? '2' : '3'}
-                </div>
-                <div className="lesson-copy">
-                  <div className="lesson-type-row">
-                    <span className="lesson-type">{lesson.type}</span>
-                    <span className="lesson-time">{lesson.duration}</span>
+            {liveLessonSegments.length === 0 ? (
+              <div className="training-audio-note">No lessons have been published yet.</div>
+            ) : (
+              liveLessonSegments.map((lesson) => (
+                <article className={`lesson-row lesson-${lesson.state}`} key={lesson.title}>
+                  <div className="lesson-index">
+                    {lesson.state === 'current' ? '▶' : lesson.state === 'next' ? '2' : '3'}
                   </div>
-                  <h3>{lesson.title}</h3>
-                </div>
-                <span className={`lesson-state state-${lesson.state}`}>
-                  {lesson.state === 'current' ? 'In progress' : lesson.state === 'next' ? 'Up next' : 'Locked'}
-                </span>
-              </article>
-            ))}
+                  <div className="lesson-copy">
+                    <div className="lesson-type-row">
+                      <span className="lesson-type">{lesson.type}</span>
+                      <span className="lesson-time">{lesson.duration}</span>
+                    </div>
+                    <h3>{lesson.title}</h3>
+                  </div>
+                  <span className={`lesson-state state-${lesson.state}`}>
+                    {lesson.state === 'current' ? 'In progress' : lesson.state === 'next' ? 'Up next' : 'Later'}
+                  </span>
+                </article>
+              ))
+            )}
           </div>
         </div>
 
@@ -1270,12 +1369,21 @@ function MyTrainingView({
             <div className="card-header">
               <span className="card-title">Current assignment</span>
             </div>
-            <h3>Field observation: spacing consistency</h3>
-            <p>
-              Visit one plot, document spacing patterns, and submit a short note with two photos or
-              one voice note before 16 Apr 2026.
-            </p>
-            <button className="btn-primary-top assignment-btn">Start submission →</button>
+            {currentAssignment ? (
+              <>
+                <h3>{currentAssignment.name}</h3>
+                <p>
+                  {currentAssignment.description ||
+                    currentAssignment.remarks ||
+                    'No further details were provided for this assignment.'}
+                </p>
+                <button className="btn-primary-top assignment-btn" type="button" onClick={onViewAssignments}>
+                  Start submission →
+                </button>
+              </>
+            ) : (
+              <p className="training-audio-note">No assignments right now.</p>
+            )}
           </div>
         </div>
       </section>
@@ -1295,10 +1403,9 @@ function MyTrainingView({
         <div className="training-module-resource-grid">
           {selectedModule.resources.length > 0 ? (
             selectedModule.resources.map((item) => (
-              <article className="training-module-resource-item" key={`${selectedModule.num}-${item.title}-${item.language}`}>
+              <article className="training-module-resource-item" key={`${selectedModule.num}-${item.title}`}>
                 <div className="library-row-tags">
                   <span className={`media-pill media-${item.format.toLowerCase()}`}>{item.format}</span>
-                  <span className="language-pill">{item.language}</span>
                   <span className="module-pill">{selectedModule.name}</span>
                 </div>
                 <h3>{item.title}</h3>
@@ -1319,7 +1426,7 @@ function MyTrainingView({
                   </div>
                 ) : item.format === 'Audio' ? (
                   <div className="training-resource-actions">
-                    {getAudioCandidates(item.href).some(isBrowserPlayableAudio) ? (
+                    {isBrowserPlayableAudio(item.href) ? (
                       <audio
                         className="library-audio-player training-audio-player"
                         controls
@@ -1344,9 +1451,8 @@ function MyTrainingView({
                       </audio>
                     ) : (
                       <div className="training-audio-note">
-                        This audio file uses a protected or unsupported format for in-browser playback.
-                        The app will try an `.mp3` version first when available. Otherwise, open or
-                        download it below to listen externally.
+                        This audio file uses a protected or unsupported format for in-browser
+                        playback. Download it below to listen externally.
                       </div>
                     )}
                     <a
@@ -1381,7 +1487,7 @@ function MyTrainingView({
           ) : (
             <article className="training-module-resource-item training-module-empty">
               <h3>No uploaded learning resources yet</h3>
-              <p>Add the next PDF and audio files to `public/modules` and they can be linked here too.</p>
+              <p>Upload a PDF or audio file to this module&apos;s lesson content and it will appear here automatically.</p>
             </article>
           )}
         </div>
@@ -1593,6 +1699,124 @@ function AssignmentsView({
     });
   };
 
+  const openDetailItem = liveAssignments.find((item) => item.title === openAssignmentName) ?? null;
+
+  if (openDetailItem) {
+    const item = openDetailItem;
+    const uploadedFile = uploadedAssignments[item.title];
+    const savedSubmission = submittedResponses[item.title];
+    const editorContent = draftResponses[item.title] ?? savedSubmission?.response ?? '';
+    const canSubmit = Boolean(stripEditorHtml(editorContent)) || Boolean(uploadedFile);
+
+    return (
+      <div className="assignment-detail-page">
+        <button
+          type="button"
+          className="assignment-back-btn"
+          onClick={() => setOpenAssignmentName(null)}
+        >
+          ← Back to assignments
+        </button>
+
+        <div className="assignment-detail-header">
+          <div>
+            <span className="assignment-type">{item.type}</span>
+            <h2>{item.title}</h2>
+          </div>
+          <span
+            className={`assignment-status status-${item.status}`}
+            style={item.badgeStyle}
+          >
+            {item.status === 'urgent' ? 'Due soon' : item.status === 'open' ? 'Open' : 'Scheduled'}
+          </span>
+        </div>
+        <p className="assignment-detail-due">{item.due}</p>
+
+        <div className="assignment-brief-grid">
+          <div>
+            <span className="assignment-type">Assignment brief</span>
+            <p>{item.detail}</p>
+          </div>
+          <div>
+            <span className="assignment-type">Lecturer</span>
+            <p>
+              {item.lecturer}
+              {item.lecturerContact ? ` · ${item.lecturerContact}` : ''}
+            </p>
+          </div>
+          <div>
+            <span className="assignment-type">Remarks</span>
+            <p>{item.remarks}</p>
+          </div>
+        </div>
+
+        <div className="assignment-upload-box">
+          <div>
+            <span className="assignment-type">Upload assignment</span>
+            <p>Attach a completed PDF, Word document, text file, or image.</p>
+          </div>
+          <label className="assignment-file-picker">
+            <input
+              type="file"
+              accept=".pdf,.doc,.docx,.txt,.rtf,.jpg,.jpeg,.png"
+              onChange={(event) => handleAssignmentFileChange(item.title, event)}
+              disabled={submittingAssignments[item.title]}
+            />
+            Choose file
+          </label>
+          {uploadedFile ? (
+            <div className="assignment-file-chip">
+              <span>
+                {uploadedFile.name} · {formatFileSize(uploadedFile.size)}
+              </span>
+              <button
+                type="button"
+                onClick={() => clearAssignmentFile(item.title)}
+                disabled={submittingAssignments[item.title]}
+              >
+                Remove
+              </button>
+            </div>
+          ) : null}
+        </div>
+
+        <div className="assignment-document-editor">
+          <span className="assignment-type">Type in system</span>
+          <RichTextEditor
+            content={editorContent}
+            onChange={(content) =>
+              setDraftResponses((current) => ({
+                ...current,
+                [item.title]: content,
+              }))
+            }
+            placeholder="Start typing your assignment..."
+          />
+        </div>
+
+        <div className="training-resource-actions assignment-submit-row">
+          <button
+            type="button"
+            className="btn-primary-top assignment-inline-btn"
+            onClick={() => handleSubmitAssignment(item.title)}
+            disabled={submittingAssignments[item.title] || !canSubmit}
+          >
+            {submittingAssignments[item.title] ? 'Submitting...' : 'Submit assignment'}
+          </button>
+        </div>
+        {submissionErrors[item.title] ? (
+          <div className="assignment-submit-error">{submissionErrors[item.title]}</div>
+        ) : null}
+        {savedSubmission ? (
+          <div className="assignment-submit-success">
+            Submitted in app on {formatAssignmentDate(savedSubmission.submittedAt)}
+            {savedSubmission.attachmentName ? ` · ${savedSubmission.attachmentName}` : ''}
+          </div>
+        ) : null}
+      </div>
+    );
+  }
+
   return (
     <div className="assignments-view">
       <section className="assignments-hero-card">
@@ -1687,115 +1911,12 @@ function AssignmentsView({
                     <button
                       className="btn-primary-top assignment-inline-btn"
                       type="button"
-                      onClick={() =>
-                        setOpenAssignmentName((current) =>
-                          current === item.title ? null : item.title,
-                        )
-                      }
+                      onClick={() => setOpenAssignmentName(item.title)}
                     >
-                      {openAssignmentName === item.title ? 'Close task' : 'Open task →'}
+                      Open task →
                     </button>
                   ) : null}
                 </div>
-                {'raw' in item && item.raw ? (
-                  openAssignmentName === item.title ? (
-                    (() => {
-                      const uploadedFile = uploadedAssignments[item.title];
-                      const savedSubmission = submittedResponses[item.title];
-                      const editorContent =
-                        draftResponses[item.title] ?? savedSubmission?.response ?? '';
-                      const canSubmit =
-                        Boolean(stripEditorHtml(editorContent)) || Boolean(uploadedFile);
-
-                      return (
-                        <div className="assignment-submission-panel">
-                          <div className="assignment-brief-grid">
-                            <div>
-                              <span className="assignment-type">Assignment brief</span>
-                              <p>{item.detail}</p>
-                            </div>
-                            <div>
-                              <span className="assignment-type">Lecturer</span>
-                              <p>{item.lecturer}</p>
-                            </div>
-                            <div>
-                              <span className="assignment-type">Remarks</span>
-                              <p>{item.remarks}</p>
-                            </div>
-                          </div>
-
-                          <div className="assignment-upload-box">
-                            <div>
-                              <span className="assignment-type">Upload assignment</span>
-                              <p>Attach a completed PDF, Word document, text file, or image.</p>
-                            </div>
-                            <label className="assignment-file-picker">
-                              <input
-                                type="file"
-                                accept=".pdf,.doc,.docx,.txt,.rtf,.jpg,.jpeg,.png"
-                                onChange={(event) => handleAssignmentFileChange(item.title, event)}
-                                disabled={submittingAssignments[item.title]}
-                              />
-                              Choose file
-                            </label>
-                            {uploadedFile ? (
-                              <div className="assignment-file-chip">
-                                <span>
-                                  {uploadedFile.name} · {formatFileSize(uploadedFile.size)}
-                                </span>
-                                <button
-                                  type="button"
-                                  onClick={() => clearAssignmentFile(item.title)}
-                                  disabled={submittingAssignments[item.title]}
-                                >
-                                  Remove
-                                </button>
-                              </div>
-                            ) : null}
-                          </div>
-
-                          <div className="assignment-document-editor">
-                            <span className="assignment-type">Type in system</span>
-                            <RichTextEditor
-                              content={editorContent}
-                              onChange={(content) =>
-                                setDraftResponses((current) => ({
-                                  ...current,
-                                  [item.title]: content,
-                                }))
-                              }
-                              placeholder="Start typing your assignment..."
-                            />
-                          </div>
-
-                          <div className="training-resource-actions assignment-submit-row">
-                            <button
-                              type="button"
-                              className="btn-primary-top assignment-inline-btn"
-                              onClick={() => handleSubmitAssignment(item.title)}
-                              disabled={submittingAssignments[item.title] || !canSubmit}
-                            >
-                              {submittingAssignments[item.title] ? 'Submitting...' : 'Submit assignment'}
-                            </button>
-                          </div>
-                          {submissionErrors[item.title] ? (
-                            <div className="assignment-submit-error">
-                              {submissionErrors[item.title]}
-                            </div>
-                          ) : null}
-                          {savedSubmission ? (
-                            <div className="assignment-submit-success">
-                              Submitted in app on {formatAssignmentDate(savedSubmission.submittedAt)}
-                              {savedSubmission.attachmentName
-                                ? ` · ${savedSubmission.attachmentName}`
-                                : ''}
-                            </div>
-                          ) : null}
-                        </div>
-                      );
-                    })()
-                  ) : null
-                ) : null}
               </article>
             ))}
           </div>
@@ -1840,7 +1961,23 @@ function AssignmentsView({
   );
 }
 
-function CertificatesView() {
+function CertificatesView({
+  certificates,
+  learnerProfile,
+}: {
+  certificates: { name: string; course: string; status: string; issuedDate: string; detail: string }[];
+  learnerProfile: LearnerProfile;
+}) {
+  const earnedCount = certificates.filter((c) => normalizeCertificateState(c.status) === 'earned').length;
+  const pendingCount = certificates.filter((c) => normalizeCertificateState(c.status) === 'pending').length;
+  const lockedCount = certificates.filter((c) => normalizeCertificateState(c.status) === 'locked').length;
+  const stats = [
+    { label: 'Earned certificates', value: String(earnedCount) },
+    { label: 'In review', value: String(pendingCount) },
+    { label: 'Locked', value: String(lockedCount) },
+  ];
+  const latestEarned = certificates.find((c) => normalizeCertificateState(c.status) === 'earned');
+
   return (
     <div className="certificates-view">
       <section className="certificates-hero-card">
@@ -1854,7 +1991,7 @@ function CertificatesView() {
         </div>
 
         <div className="certificates-summary-grid">
-          {certificateStats.map((item) => (
+          {stats.map((item) => (
             <div className="certificate-summary-pill" key={item.label}>
               <span>{item.label}</span>
               <strong>{item.value}</strong>
@@ -1867,48 +2004,58 @@ function CertificatesView() {
         <div className="certificates-board-card">
           <div className="card-header">
             <span className="card-title">Certification progress</span>
-            <span className="card-link">Pilot cohort</span>
+            <span className="card-link">
+              {certificates.length} course{certificates.length === 1 ? '' : 's'}
+            </span>
           </div>
 
-          <div className="certificate-timeline">
-            {certificateTimeline.map((item) => (
-              <article className={`certificate-stage stage-${item.status}`} key={item.title}>
-                <div className="certificate-stage-icon">
-                  {item.status === 'earned' ? '✓' : item.status === 'review' ? '•' : '○'}
-                </div>
-                <div className="certificate-stage-copy">
-                  <div className="certificate-stage-top">
-                    <div>
-                      <h3>{item.title}</h3>
-                      <span>{item.meta}</span>
+          {certificates.length === 0 ? (
+            <div className="training-audio-note">
+              No certificates yet. Enroll in and complete a course to start earning one.
+            </div>
+          ) : (
+            <div className="certificate-timeline">
+              {certificates.map((item) => {
+                const state = normalizeCertificateState(item.status);
+                const cssState = state === 'pending' ? 'review' : state;
+                return (
+                  <article className={`certificate-stage stage-${cssState}`} key={item.name}>
+                    <div className="certificate-stage-icon">
+                      {state === 'earned' ? '✓' : state === 'pending' ? '•' : '○'}
                     </div>
-                    <span className={`certificate-state state-${item.status}`}>
-                      {item.status === 'earned'
-                        ? 'Earned'
-                        : item.status === 'review'
-                          ? 'In review'
-                          : 'Locked'}
-                    </span>
-                  </div>
-                  <p>{item.detail}</p>
-                </div>
-              </article>
-            ))}
-          </div>
+                    <div className="certificate-stage-copy">
+                      <div className="certificate-stage-top">
+                        <div>
+                          <h3>{item.course}</h3>
+                          <span>{certificateStatusLabel(item)}</span>
+                        </div>
+                        <span className={`certificate-state state-${cssState}`}>
+                          {state === 'earned' ? 'Earned' : state === 'pending' ? 'In review' : 'Locked'}
+                        </span>
+                      </div>
+                      <p>{item.detail || 'No additional details provided.'}</p>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         <div className="certificates-side-stack">
-          <div className="certificates-side-card certificate-download-card">
-            <div className="card-header">
-              <span className="card-title">Latest certificate</span>
+          {latestEarned ? (
+            <div className="certificates-side-card certificate-download-card">
+              <div className="card-header">
+                <span className="card-title">Latest certificate</span>
+              </div>
+              <div className="certificate-preview-tile">
+                <div className="certificate-preview-mark">ZETRC</div>
+                <h3>{latestEarned.course}</h3>
+                <p>Issued to {learnerProfile.fullName}</p>
+              </div>
+              <button className="btn-primary-top certificate-download-btn">Download PDF →</button>
             </div>
-            <div className="certificate-preview-tile">
-              <div className="certificate-preview-mark">ZETRC</div>
-              <h3>Climate-smart farming basics</h3>
-              <p>Issued to Chanda Mwale</p>
-            </div>
-            <button className="btn-primary-top certificate-download-btn">Download PDF →</button>
-          </div>
+          ) : null}
 
           <div className="certificates-side-card">
             <div className="card-header">
@@ -1937,20 +2084,92 @@ export default function Dashboard({
 }: DashboardProps) {
   const { t } = useLanguage();
   const [activeView, setActiveView] = useState<ViewKey>('dashboard');
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const notificationsRef = useRef<HTMLDivElement>(null);
   const { lessons } = useLessons();
   const {
     assignments,
     isLoading: assignmentsLoading,
     errorMessage: assignmentsError,
   } = useAssignments();
+  const { modules: courseModules, isLoading: courseModulesLoading } = useCourseModules(
+    learnerEnrollment?.courseName,
+  );
+  const { certificates: myCertificates } = useCertificates(learnerProfile.email);
   const liveModules = useMemo(
     () => buildLessonModuleRows(lessons),
     [lessons],
   );
 
+  const earnedCertificateCount = myCertificates.filter(
+    (c) => normalizeCertificateState(c.status) === 'earned',
+  ).length;
+
+  const libraryItemCount = useMemo(
+    () => lessons.flatMap((lesson) => buildLessonResources(lesson)).length,
+    [lessons],
+  );
+  const trainingBadge = lessons.length > 0 ? String(lessons.length) : undefined;
+  const assignmentsBadge = assignments.length > 0 ? String(assignments.length) : undefined;
+  const libraryBadge = libraryItemCount > 0 ? String(libraryItemCount) : undefined;
+
+  const viewOrder: ViewKey[] = ['dashboard', 'mycourse', 'training', 'assignments', 'certificates', 'library'];
+  const nextView = (current: ViewKey): ViewKey => {
+    const index = viewOrder.indexOf(current);
+    return viewOrder[(index + 1) % viewOrder.length];
+  };
+
+  const todayLong = formatTodayLong();
+
+  const viewGreeting: Record<ViewKey, string> = {
+    dashboard: `${getTimeOfDayGreeting()}, ${learnerProfile.firstName || 'Learner'}`,
+    mycourse: t('myCourse'),
+    training: t('myTraining'),
+    assignments: t('assignments'),
+    certificates: t('certificates'),
+    library: t('learningLibrary'),
+  };
+
+  const viewDateLine: Record<ViewKey, string> = {
+    dashboard: `${todayLong} · ${learnerEnrollment?.courseName ?? 'Pilot Training'}`,
+    mycourse: learnerEnrollment
+      ? `${todayLong} · ${learnerEnrollment.courseName}`
+      : `${todayLong} · No course applied yet`,
+    training: lessons[0]
+      ? `${todayLong} · ${lessons[0].module || lessons[0].name} in progress`
+      : `${todayLong} · No lessons published yet`,
+    assignments: `${todayLong} · 1 assignment due this week`,
+    certificates: `${todayLong} · ${earnedCertificateCount} certificate${earnedCertificateCount === 1 ? '' : 's'} earned`,
+    library: `${todayLong} · Bilingual module library ready`,
+  };
+
+  const viewCtaLabel: Record<ViewKey, string> = {
+    dashboard: t('dashboard'),
+    mycourse: t('viewMyCourse'),
+    training: t('continueTraining'),
+    assignments: t('viewAssignments'),
+    certificates: t('viewCertificates'),
+    library: t('openLibrary'),
+  };
+
   const openWhatsAppSupport = () => {
     openWhatsApp(t('whatsappMsgSupport'));
   };
+
+  useEffect(() => {
+    if (!notificationsOpen) {
+      return;
+    }
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (notificationsRef.current && !notificationsRef.current.contains(event.target as Node)) {
+        setNotificationsOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [notificationsOpen]);
 
   return (
     <div className="dash-wrap">
@@ -1981,22 +2200,29 @@ export default function Dashboard({
             onClick={() => setActiveView('dashboard')}
           />
           <NavItem
+            icon="flag"
+            label={t('myCourse')}
+            active={activeView === 'mycourse'}
+            onClick={() => setActiveView('mycourse')}
+          />
+          <NavItem
             icon="book"
             label={t('myTraining')}
-            badge="5"
+            badge={trainingBadge}
             active={activeView === 'training'}
             onClick={() => setActiveView('training')}
           />
           <NavItem
             icon="clock"
             label={t('assignments')}
-            badge="2"
+            badge={assignmentsBadge}
             active={activeView === 'assignments'}
             onClick={() => setActiveView('assignments')}
           />
           <NavItem
             icon="star"
             label={t('certificates')}
+            badge={myCertificates.length > 0 ? String(myCertificates.length) : undefined}
             active={activeView === 'certificates'}
             onClick={() => setActiveView('certificates')}
           />
@@ -2004,7 +2230,7 @@ export default function Dashboard({
           <NavItem
             icon="file"
             label={t('learningLibrary')}
-            badge="8"
+            badge={libraryBadge}
             active={activeView === 'library'}
             onClick={() => setActiveView('library')}
           />
@@ -2025,63 +2251,62 @@ export default function Dashboard({
       <main className="main-content">
         <div className="top-bar">
           <div>
-            <h1 className="greeting">
-              {activeView === 'dashboard'
-                ? `Good morning, ${learnerProfile.firstName || 'Learner'}`
-                : activeView === 'training'
-                  ? t('myTraining')
-                  : activeView === 'assignments'
-                  ? t('assignments')
-                  : activeView === 'certificates'
-                    ? t('certificates')
-                    : t('learningLibrary')}
-            </h1>
-            <p className="date-line">
-              {activeView === 'dashboard'
-                ? `Tuesday, 14 April 2026 · ${learnerEnrollment?.courseName ?? 'Pilot Training'}`
-                : activeView === 'training'
-                  ? 'Tuesday, 14 April 2026 · Module 3 in progress'
-                  : activeView === 'assignments'
-                    ? 'Tuesday, 14 April 2026 · 1 assignment due this week'
-                    : activeView === 'certificates'
-                      ? 'Tuesday, 14 April 2026 · 1 certificate earned'
-                      : 'Tuesday, 14 April 2026 · Bilingual module library ready'}
-            </p>
+            <h1 className="greeting">{viewGreeting[activeView]}</h1>
+            <p className="date-line">{viewDateLine[activeView]}</p>
           </div>
           <div className="top-actions">
+            <div className="notification-wrap" ref={notificationsRef}>
+              <button
+                type="button"
+                className="notification-bell-btn"
+                onClick={() => setNotificationsOpen((prev) => !prev)}
+                aria-label="Notifications"
+                aria-expanded={notificationsOpen}
+              >
+                <BellIcon />
+                {announcements.length > 0 && (
+                  <span className="notification-badge">{announcements.length}</span>
+                )}
+              </button>
+              {notificationsOpen && (
+                <div className="notification-dropdown">
+                  <div className="notification-dropdown-header">Announcements</div>
+                  <div className="announce-list">
+                    {announcements.map((a, i) => (
+                      <div className={`announce-row ${a.type === 'warn' ? 'announce-warn' : 'announce-info'}`} key={i}>
+                        <div className="announce-title">{a.title}</div>
+                        <div className="announce-body">{a.body}</div>
+                        <div className="announce-date">{a.date}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
             <button className="btn-ghost-top" onClick={onLogout}>{t('logout')}</button>
             <button className="btn-ghost-top" onClick={onRequestProposal}>{t('requestProposal')}</button>
             <button
               className="btn-primary-top"
-              onClick={() =>
-                setActiveView(
-                  activeView === 'dashboard'
-                    ? 'training'
-                  : activeView === 'training'
-                      ? 'assignments'
-                      : activeView === 'assignments'
-                        ? 'certificates'
-                        : activeView === 'certificates'
-                          ? 'library'
-                          : 'dashboard',
-                )
-              }
+              onClick={() => setActiveView(nextView(activeView))}
             >
-              {activeView === 'dashboard'
-                ? t('continueTraining')
-                : activeView === 'training'
-                  ? t('viewAssignments')
-                  : activeView === 'assignments'
-                    ? t('viewCertificates')
-                    : activeView === 'certificates'
-                      ? t('openLibrary')
-                      : t('dashboard')}
+              {viewCtaLabel[nextView(activeView)]}
             </button>
           </div>
         </div>
 
-        {activeView === 'dashboard' ? <DashboardOverview liveModules={liveModules} lessons={lessons} /> : null}
-        {activeView === 'training' ? <MyTrainingView lessons={lessons} /> : null}
+        {activeView === 'dashboard' ? (
+          <DashboardOverview liveModules={liveModules} lessons={lessons} certificates={myCertificates} />
+        ) : null}
+        {activeView === 'mycourse' ? (
+          <MyCourseView
+            learnerEnrollment={learnerEnrollment}
+            courseModules={courseModules}
+            courseModulesLoading={courseModulesLoading}
+          />
+        ) : null}
+        {activeView === 'training' ? (
+          <MyTrainingView lessons={lessons} assignments={assignments} onViewAssignments={() => setActiveView('assignments')} />
+        ) : null}
         {activeView === 'assignments' ? (
           <AssignmentsView
             assignments={assignments}
@@ -2090,8 +2315,10 @@ export default function Dashboard({
             learnerProfile={learnerProfile}
           />
         ) : null}
-        {activeView === 'certificates' ? <CertificatesView /> : null}
-        {activeView === 'library' ? <LibraryView /> : null}
+        {activeView === 'certificates' ? (
+          <CertificatesView certificates={myCertificates} learnerProfile={learnerProfile} />
+        ) : null}
+        {activeView === 'library' ? <LibraryView lessons={lessons} /> : null}
       </main>
     </div>
   );
@@ -2122,6 +2349,7 @@ function NavItem({
 function NavIcon({ name }: { name: string }) {
   const icons: Record<string, JSX.Element> = {
     grid: <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><rect x="1" y="1" width="6" height="6" rx="1.5"/><rect x="9" y="1" width="6" height="6" rx="1.5"/><rect x="1" y="9" width="6" height="6" rx="1.5"/><rect x="9" y="9" width="6" height="6" rx="1.5"/></svg>,
+    flag: <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M3 1.5v13"/><path d="M3 2.5h9l-2 3 2 3H3"/></svg>,
     book: <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M2 3h5a1 1 0 011 1v9a1 1 0 01-1 1H2V3z"/><path d="M14 3H9a1 1 0 00-1 1v9a1 1 0 001 1h5V3z"/></svg>,
     clock: <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 2"/></svg>,
     star: <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M8 1l1.8 3.6L14 5.3l-3 2.9.7 4.1L8 10.5l-3.7 1.8.7-4.1-3-2.9 4.2-.7z"/></svg>,
