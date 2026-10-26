@@ -1,0 +1,230 @@
+.certpg-page {
+  min-height: 100vh;
+  padding: 24px 16px 48px;
+  background: #f2f6ef;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  font-family: inherit;
+  color: #10231b;
+}
+
+.certpg-toolbar {
+  width: 100%;
+  max-width: 1000px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.certpg-message {
+  max-width: 560px;
+  text-align: center;
+  padding: 40px 16px;
+}
+
+.certpg-message h1 {
+  margin: 0 0 8px;
+}
+
+.certpg-status {
+  padding: 8px 16px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.certpg-status-good {
+  background: #e3f4e9;
+  color: #1f7a45;
+}
+
+.certpg-status-bad {
+  display: inline-block;
+  background: #fbe4e8;
+  color: #b3203a;
+  margin-bottom: 12px;
+}
+
+.certpg-sheet {
+  width: 100%;
+  max-width: 1000px;
+  aspect-ratio: 1.414 / 1;
+  background: #fffdf6;
+  padding: 22px;
+  box-shadow: 0 24px 60px rgba(15, 45, 35, 0.18);
+  border-radius: 6px;
+  box-sizing: border-box;
+}
+
+.certpg-border {
+  height: 100%;
+  box-sizing: border-box;
+  border: 3px double #b7860f;
+  outline: 1px solid rgba(183, 134, 15, 0.4);
+  outline-offset: -12px;
+  padding: 36px 56px 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  background:
+    radial-gradient(circle at 50% 45%, rgba(217, 165, 31, 0.07), transparent 60%),
+    #fffdf6;
+}
+
+.certpg-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  text-align: left;
+}
+
+.certpg-org {
+  font-size: 15px;
+  font-weight: 700;
+  color: #0f2d23;
+  letter-spacing: 0.02em;
+}
+
+.certpg-org-sub {
+  font-size: 12px;
+  letter-spacing: 0.3em;
+  color: #b7860f;
+}
+
+.certpg-kicker {
+  margin: 26px 0 6px;
+  font-size: 30px;
+  font-family: Georgia, 'Times New Roman', serif;
+  color: #0f2d23;
+  letter-spacing: 0.04em;
+}
+
+.certpg-small {
+  margin: 6px 0;
+  font-size: 14px;
+  color: rgba(16, 35, 27, 0.7);
+}
+
+.certpg-name {
+  margin: 6px 0;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 40px;
+  font-weight: 400;
+  font-style: italic;
+  color: #17503b;
+  border-bottom: 1px solid rgba(183, 134, 15, 0.5);
+  padding: 0 28px 6px;
+}
+
+.certpg-course {
+  margin: 6px 0;
+  font-size: 24px;
+  color: #0f2d23;
+}
+
+.certpg-score {
+  margin: 8px 0 0;
+  font-size: 15px;
+}
+
+.certpg-footer {
+  margin-top: auto;
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  align-items: end;
+  gap: 24px;
+}
+
+.certpg-sign {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+}
+
+.certpg-sign span {
+  color: rgba(16, 35, 27, 0.6);
+  font-size: 12px;
+}
+
+.certpg-sign-line {
+  height: 1px;
+  background: rgba(16, 35, 27, 0.5);
+  margin-bottom: 4px;
+}
+
+.certpg-date {
+  font-weight: 700;
+  border-bottom: 1px solid rgba(16, 35, 27, 0.5);
+  padding-bottom: 6px;
+}
+
+.certpg-verify {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: rgba(16, 35, 27, 0.7);
+}
+
+.certpg-qr svg {
+  width: 96px;
+  height: 96px;
+  display: block;
+}
+
+@media (max-width: 700px) {
+  .certpg-sheet {
+    aspect-ratio: auto;
+  }
+
+  .certpg-border {
+    padding: 24px 18px;
+  }
+
+  .certpg-name {
+    font-size: 28px;
+  }
+
+  .certpg-footer {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    margin-top: 24px;
+  }
+}
+
+@media print {
+  @page {
+    size: A4 landscape;
+    margin: 0;
+  }
+
+  body * {
+    visibility: hidden;
+  }
+
+  .certpg-sheet,
+  .certpg-sheet * {
+    visibility: visible;
+  }
+
+  .certpg-sheet {
+    position: fixed;
+    inset: 0;
+    max-width: none;
+    width: 100%;
+    height: 100%;
+    aspect-ratio: auto;
+    box-shadow: none;
+    border-radius: 0;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}

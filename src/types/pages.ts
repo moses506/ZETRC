@@ -11,7 +11,12 @@ export type PageKey =
   | 'login'
   | 'register'
   | 'course-enrollment'
-  | 'dashboard';
+  | 'dashboard'
+  | 'admin-login'
+  | 'admin-dashboard'
+  | 'lecturer-login'
+  | 'lecturer-dashboard'
+  | 'certificate';
 
 export const PUBLIC_PAGES: PageKey[] = [
   'home',
@@ -38,10 +43,16 @@ export const pageHashMap: Record<PageKey, string> = {
   register: '#register',
   'course-enrollment': '#course-enrollment',
   dashboard: '#dashboard',
+  'admin-login': '#admin-login',
+  'admin-dashboard': '#admin-dashboard',
+  'lecturer-login': '#lecturer-login',
+  'lecturer-dashboard': '#lecturer-dashboard',
+  certificate: '#certificate',
 };
 
 export function getPageFromHash(hash: string): PageKey {
-  switch (hash.replace('#', '').toLowerCase()) {
+  // "#certificate/ZET-XXXX" carries a code after the page name.
+  switch (hash.replace('#', '').split('/')[0].toLowerCase()) {
     case 'about':
       return 'about';
     case 'impact':
@@ -68,6 +79,18 @@ export function getPageFromHash(hash: string): PageKey {
       return 'course-enrollment';
     case 'dashboard':
       return 'dashboard';
+    case 'admin-login':
+      return 'admin-login';
+    case 'admin-dashboard':
+      return 'admin-dashboard';
+    case 'lecturer':
+    case 'lecturer-login':
+      return 'lecturer-login';
+    case 'lecturer-dashboard':
+      return 'lecturer-dashboard';
+    case 'certificate':
+    case 'verify':
+      return 'certificate';
     default:
       return 'home';
   }

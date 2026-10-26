@@ -198,6 +198,12 @@ export function getStoredLearnerEnrollment(): LearnerEnrollment | null {
   };
 }
 
+export function getStoredLearnerToken(): string | null {
+  const sessionRecord = findRecord(safeParse('zetrcAuthSession'));
+  const token = sessionRecord && readString(sessionRecord, ['token']);
+  return token || null;
+}
+
 export function hasStoredLearnerSession(): boolean {
   return isRecord(safeParse('zetrcAuthSession'));
 }
@@ -207,4 +213,104 @@ export function clearStoredLearnerData(): void {
   localStorage.removeItem('zetrcRememberUser');
   localStorage.removeItem('zetrcEnrollment');
   localStorage.removeItem('zetrcLastRegistration');
+}
+
+export type AdminProfile = {
+  firstName: string;
+  lastName: string;
+  fullName: string;
+  email: string;
+  initials: string;
+};
+
+/** A staff area with its own session slot in localStorage. */
+export type StaffScope = 'admin' | 'lecturer';
+
+const STAFF_SESSION_KEYS: Record<StaffScope, string> = {
+  admin: 'zetrcAdminSession',
+  lecturer: 'zetrcLecturerSession',
+};
+
+const STAFF_DEFAULT_NAMES: Record<StaffScope, string> = {
+  admin: 'Admin',
+  lecturer: 'Lecturer',
+};
+
+export function getStaffSessionKey(scope: StaffScope): string {
+  return STAFF_SESSION_KEYS[scope];
+}
+
+export function hasStoredStaffSession(scope: StaffScope): boolean {
+  return isRecord(safeParse(STAFF_SESSION_KEYS[scope]));
+}
+
+export function getStoredStaffProfile(scope: StaffScope): AdminProfile {
+  const sessionRecord = findRecord(safeParse(STAFF_SESSION_KEYS[scope]));
+  const fallbackName = STAFF_DEFAULT_NAMES[scope];
+
+  const fullNameFromSession =
+    (sessionRecord && readString(sessionRecord, ['full_name', 'fullName', 'name'])) || '';
+  const nameParts = splitFullName(fullNameFromSession);
+
+  const firstName =
+    (sessionRecord && readString(sessionRecord, ['first_name', 'firstName'])) ||
+    nameParts.firstName ||
+    fallbackName;
+
+  const lastName =
+    (sessionRecord && readString(sessionRecord, ['last_name', 'lastName'])) || nameParts.lastName || '';
+
+  const fullName = fullNameFromSession || `${firstName} ${lastName}`.trim() || fallbackName;
+
+  const email = (sessionRecord && readString(sessionRecord, ['email', 'login_email'])) || '';
+
+  return {
+    firstName,
+    lastName,
+    fullName,
+    email,
+    initials: buildInitials(firstName, lastName, fullName),
+  };
+}
+
+export function getStoredStaffToken(scope: StaffScope): string | null {
+  const sessionRecord = findRecord(safeParse(STAFF_SESSION_KEYS[scope]));
+  const token = sessionRecord && readString(sessionRecord, ['token']);
+
+  return token || null;
+}
+
+export function clearStoredStaffData(scope: StaffScope): void {
+  localStorage.removeItem(STAFF_SESSION_KEYS[scope]);
+}
+
+// Admin wrappers kept for existing call sites.
+export const hasStoredAdminSession = (): boolean => hasStoredStaffSession('admin');
+export const getStoredAdminProfile = (): AdminProfile => getStoredStaffProfile('admin');
+export const getStoredAdminToken = (): string | null => getStoredStaffToken('admin');
+export const clearStoredAdminData = (): void => clearStoredStaffData('admin');
+
+// Lecturer equivalents.
+export const hasStoredLecturerSession = (): boolean => hasStoredStaffSession('lecturer');
+export const getStoredLecturerProfile = (): AdminProfile => getStoredStaffProfile('lecturer');
+export const clearStoredLecturerData = (): void => clearStoredStaffData('lecturer');
+
+/**
+ * After a sign-in on the learner login page, move Admin/Lecturer sessions into
+ * their own slot so staff land in their portal instead of course enrollment.
+ * Returns the staff scope the session moved to, or null for learners.
+ */
+export function promoteLearnerSessionToStaff(): StaffScope | null {
+  const learnerSession = safeParse('zetrcAuthSession');
+  const sessionRecord = findRecord(learnerSession);
+  const role = (sessionRecord ? readString(sessionRecord, ['role']) : '').toLowerCase();
+
+  const scope: StaffScope | null = role === 'admin' ? 'admin' : role === 'lecturer' ? 'lecturer' : null;
+  if (!scope) {
+    return null;
+  }
+
+  localStorage.setItem(STAFF_SESSION_KEYS[scope], JSON.stringify(learnerSession));
+  clearStoredLearnerData();
+  return scope;
 }

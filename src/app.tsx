@@ -12,11 +12,22 @@ import Dashboard from './pages/dasboard';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import CourseEnrollment from './pages/CourseEnrollment';
+import AdminLogin from './pages/admin/AdminLogin';
+import AdminDashboard from './pages/admin/AdminDashboard';
+import LecturerDashboard from './pages/lecturer/LecturerDashboard';
+import CertificatePage from './pages/CertificatePage';
 import {
   clearStoredLearnerData,
   getStoredLearnerEnrollment,
   getStoredLearnerProfile,
   hasStoredLearnerSession,
+  clearStoredAdminData,
+  getStoredAdminProfile,
+  hasStoredAdminSession,
+  promoteLearnerSessionToStaff,
+  hasStoredLecturerSession,
+  getStoredLecturerProfile,
+  clearStoredLecturerData,
   type LearnerEnrollment,
   type LearnerProfile,
 } from './utils/auth';
@@ -42,6 +53,10 @@ function App() {
   );
   const [isAuthenticated, setIsAuthenticated] = useState(() => hasStoredLearnerSession());
   const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(() => hasStoredAdminSession());
+  const [adminProfile, setAdminProfile] = useState(() => getStoredAdminProfile());
+  const [isLecturerAuthenticated, setIsLecturerAuthenticated] = useState(() => hasStoredLecturerSession());
+  const [lecturerProfile, setLecturerProfile] = useState(() => getStoredLecturerProfile());
   const pageRef = useRef(page);
 
   useEffect(() => {
@@ -53,7 +68,15 @@ function App() {
       const nextPage = getPageFromHash(window.location.hash);
       const hasSession = hasStoredLearnerSession();
 
-      if (pageRef.current === 'dashboard' && hasSession && nextPage !== 'dashboard') {
+      const isAdminPage = [
+        'admin-login',
+        'admin-dashboard',
+        'lecturer-login',
+        'lecturer-dashboard',
+        'certificate',
+      ].includes(nextPage);
+
+      if (pageRef.current === 'dashboard' && hasSession && nextPage !== 'dashboard' && !isAdminPage) {
         window.history.pushState(null, '', getPageUrl('dashboard'));
         setPage('dashboard');
         return;
@@ -62,6 +85,10 @@ function App() {
       setIsAuthenticated(hasSession);
       setLearnerProfile(getStoredLearnerProfile());
       setLearnerEnrollment(getStoredLearnerEnrollment());
+      setIsAdminAuthenticated(hasStoredAdminSession());
+      setAdminProfile(getStoredAdminProfile());
+      setIsLecturerAuthenticated(hasStoredLecturerSession());
+      setLecturerProfile(getStoredLecturerProfile());
       setPage(nextPage);
     };
 
@@ -102,6 +129,24 @@ function App() {
   const handleGoContact = () => navigateToPage('contact');
 
   const handleLogin = () => {
+    const staffScope = promoteLearnerSessionToStaff();
+    if (staffScope) {
+      setIsAuthenticated(false);
+      setLearnerEnrollment(null);
+      setAuthNotice(null);
+
+      if (staffScope === 'admin') {
+        setAdminProfile(getStoredAdminProfile());
+        setIsAdminAuthenticated(true);
+        navigateToPage('admin-dashboard', true);
+      } else {
+        setLecturerProfile(getStoredLecturerProfile());
+        setIsLecturerAuthenticated(true);
+        navigateToPage('lecturer-dashboard', true);
+      }
+      return;
+    }
+
     setLearnerProfile(getStoredLearnerProfile());
     setIsAuthenticated(hasStoredLearnerSession());
     setLearnerEnrollment(null);
@@ -194,6 +239,32 @@ function App() {
     navigateToPage('contact');
   };
 
+  const handleAdminLogin = () => {
+    setAdminProfile(getStoredAdminProfile());
+    setIsAdminAuthenticated(hasStoredAdminSession());
+    navigateToPage('admin-dashboard', true);
+  };
+
+  const handleLecturerLogin = () => {
+    setLecturerProfile(getStoredLecturerProfile());
+    setIsLecturerAuthenticated(hasStoredLecturerSession());
+    navigateToPage('lecturer-dashboard', true);
+  };
+
+  const handleLecturerLogout = () => {
+    clearStoredLecturerData();
+    setIsLecturerAuthenticated(false);
+    setLecturerProfile(getStoredLecturerProfile());
+    navigateToPage('home', true);
+  };
+
+  const handleAdminLogout = () => {
+    clearStoredAdminData();
+    setIsAdminAuthenticated(false);
+    setAdminProfile(getStoredAdminProfile());
+    navigateToPage('home', true);
+  };
+
   return (
     <RootLayout
       currentPage={page}
@@ -260,6 +331,25 @@ function App() {
           onLogout={handleLogout}
           onRequestProposal={handleRequestProposal}
         />
+      )}
+      {page === 'admin-login' && !isAdminAuthenticated && (
+        <AdminLogin onBackHome={handleGoHome} onLogin={handleAdminLogin} />
+      )}
+      {page === 'admin-login' && isAdminAuthenticated && (
+        <AdminDashboard adminProfile={adminProfile} onLogout={handleAdminLogout} />
+      )}
+      {page === 'admin-dashboard' && isAdminAuthenticated && (
+        <AdminDashboard adminProfile={adminProfile} onLogout={handleAdminLogout} />
+      )}
+      {page === 'admin-dashboard' && !isAdminAuthenticated && (
+        <AdminLogin onBackHome={handleGoHome} onLogin={handleAdminLogin} />
+      )}
+      {page === 'certificate' && <CertificatePage onBackHome={handleGoHome} />}
+      {(page === 'lecturer-login' || page === 'lecturer-dashboard') && isLecturerAuthenticated && (
+        <LecturerDashboard profile={lecturerProfile} onLogout={handleLecturerLogout} />
+      )}
+      {(page === 'lecturer-login' || page === 'lecturer-dashboard') && !isLecturerAuthenticated && (
+        <AdminLogin variant="lecturer" onBackHome={handleGoHome} onLogin={handleLecturerLogin} />
       )}
       {isLogoutConfirmOpen && (
         <div className="logout-confirm-backdrop" role="presentation">

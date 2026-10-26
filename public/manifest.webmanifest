@@ -1,0 +1,13 @@
+{
+  "name": "ZETRC Training + Research",
+  "short_name": "ZETRC",
+  "description": "Climate-smart agriculture training for Zambian farmers and cooperatives.",
+  "start_url": "/#dashboard",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f2f6ef",
+  "theme_color": "#0f2d23",
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

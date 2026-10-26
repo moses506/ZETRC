@@ -1,11 +1,24 @@
 import { useEffect, useMemo, useRef, useState, type ChangeEvent, type SyntheticEvent } from 'react';
 import '../styles/dashboard.css';
 import type { LearnerEnrollment, LearnerProfile } from '../utils/auth';
-import { resolveApiAssetUrl, type Assignment, submitAssignmentSubmission } from '../utils/api';
+import { recordLessonProgress, resolveApiAssetUrl, type Assignment } from '../utils/api';
+import { submitAssignmentOrQueue } from '../utils/offline';
 import { useLessons } from '../hooks/useLessons';
 import { useAssignments } from '../hooks/useAssignments';
 import { useCourseModules } from '../hooks/useCourseModules';
 import { useCertificates } from '../hooks/useCertificates';
+import { useMySubmissions, type ContinuousAssessment } from '../hooks/useMySubmissions';
+import type { MySubmission } from '../utils/api';
+import { htmlToText, sanitizeHtml } from '../utils/richText';
+import ConfirmDialog from '../components/admin/ConfirmDialog';
+import LearnerBell from '../components/learner/LearnerBell';
+import LearnerQuizzes from '../components/learner/LearnerQuizzes';
+import FieldJournal from '../components/learner/FieldJournal';
+import LearnerStatusCards from '../components/learner/LearnerStatusCards';
+import VoiceRecorder from '../components/learner/VoiceRecorder';
+import Discussions from '../components/shared/Discussions';
+import { ToastProvider } from '../components/admin/Toast';
+import OfflineLessonButton from '../components/learner/OfflineLessonButton';
 import { RichTextEditor } from '../components/RichTextEditor';
 import { useLanguage } from '../i18n/LanguageContext';
 
@@ -16,7 +29,25 @@ type DashboardProps = {
   onRequestProposal: () => void;
 };
 
-type ViewKey = 'dashboard' | 'mycourse' | 'training' | 'assignments' | 'certificates' | 'library';
+type ViewKey =
+  | 'dashboard'
+  | 'mycourse'
+  | 'training'
+  | 'assignments'
+  | 'quizzes'
+  | 'certificates'
+  | 'discussions'
+  | 'journal'
+  | 'library';
+
+const VIEW_KEYS: ViewKey[] = [
+  'dashboard', 'mycourse', 'training', 'assignments', 'quizzes', 'certificates', 'discussions', 'journal', 'library',
+];
+
+/** Maps notification links to dashboard views (unknown links open the dashboard). */
+function asViewKey(view: string): ViewKey {
+  return (VIEW_KEYS as string[]).includes(view) ? (view as ViewKey) : 'dashboard';
+}
 
 type AudioProgressEntry = {
   currentTime: number;
@@ -328,9 +359,37 @@ function readAudioProgress(): Record<string, AudioProgressEntry> {
   }
 }
 
+// Server sync: send each lesson's progress at most every few seconds, and only
+// when it has moved by a whole percent or just completed.
+const progressSyncDelayMs = 4000;
+const progressSyncTimers: Record<string, ReturnType<typeof setTimeout>> = {};
+const progressLastSynced: Record<string, { percent: number; completed: boolean }> = {};
+
+function queueProgressSync(key: string, entry: AudioProgressEntry) {
+  const last = progressLastSynced[key];
+  const percent = Math.round(entry.percent);
+  if (last && percent <= last.percent && (!entry.completed || last.completed)) {
+    return;
+  }
+
+  clearTimeout(progressSyncTimers[key]);
+  progressSyncTimers[key] = setTimeout(() => {
+    progressLastSynced[key] = { percent, completed: entry.completed };
+    const module = key.split('::')[0] ?? '';
+    void recordLessonProgress({ key, module, percent, completed: entry.completed }).catch(() => {
+      delete progressLastSynced[key]; // retry on the next update
+    });
+  }, entry.completed ? 0 : progressSyncDelayMs);
+}
+
 function writeAudioProgress(progress: Record<string, AudioProgressEntry>) {
   localStorage.setItem(audioProgressStorageKey, JSON.stringify(progress));
   window.dispatchEvent(new Event(audioProgressUpdatedEvent));
+  for (const [key, entry] of Object.entries(progress)) {
+    if (entry && entry.percent > 0) {
+      queueProgressSync(key, entry);
+    }
+  }
 }
 
 function formatAudioTime(seconds: number): string {
@@ -523,7 +582,9 @@ function DashboardOverview({
   liveModules,
   lessons,
   certificates,
+  ca,
 }: {
+  ca: ContinuousAssessment;
   liveModules: { num: number; name: string; desc: string; status: string }[];
   lessons: {
     name: string;
@@ -533,7 +594,7 @@ function DashboardOverview({
     audioFiles: string;
     keyPoints: string[];
   }[];
-  certificates: { name: string; course: string; status: string; issuedDate: string }[];
+  certificates: { name: string; course: string; status: string; issuedDate: string; code?: string }[];
 }) {
   const [savedAudioProgress, setSavedAudioProgress] = useState<Record<string, AudioProgressEntry>>(
     () => readAudioProgress(),
@@ -569,6 +630,15 @@ function DashboardOverview({
           lessonProgressValues.reduce((total, percent) => total + percent, 0) / totalLessons,
         )
       : 0;
+
+  useEffect(() => {
+    // Push progress saved on this device before server sync existed.
+    for (const [key, entry] of Object.entries(readAudioProgress())) {
+      if (entry && entry.percent > 0) {
+        queueProgressSync(key, entry);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     const refreshAudioProgress = () => {
@@ -612,11 +682,14 @@ function DashboardOverview({
             color: 'green',
           },
           {
-            label: 'Audios',
-            value: String(audioReadyCount),
-            fill: totalLessons > 0 ? Math.round((audioReadyCount / totalLessons) * 100) : 0,
-            sub: `${audioReadyCount} of ${totalLessons} lesson${totalLessons === 1 ? '' : 's'} have audio`,
-            color: 'neutral',
+            label: 'Continuous assessment',
+            value: ca.percent === null ? '—' : `${Math.round(ca.percent)}%`,
+            fill: ca.percent === null ? 0 : Math.round(ca.percent),
+            sub:
+              ca.percent === null
+                ? `No marked assignments yet · ${audioReadyCount} audio lesson${audioReadyCount === 1 ? '' : 's'}`
+                : `${ca.score} / ${ca.maxScore} marks · ${ca.assessed} assessed`,
+            color: 'green',
           },
         ].map((s) => (
           <div className="stat-card" key={s.label}>
@@ -713,9 +786,15 @@ function DashboardOverview({
                       <div className="cert-name">{c.course}</div>
                       <div className="cert-status">{certificateStatusLabel(c)}</div>
                     </div>
-                    <button className={`cert-btn ${state !== 'earned' ? 'cert-btn-locked' : ''}`}>
-                      {state === 'earned' ? 'Download' : state === 'pending' ? 'Pending' : 'Locked'}
-                    </button>
+                    {state === 'earned' && c.code ? (
+                      <a className="cert-btn" href={`#certificate/${encodeURIComponent(c.code)}`}>
+                        Download
+                      </a>
+                    ) : (
+                      <button className={`cert-btn ${state !== 'earned' ? 'cert-btn-locked' : ''}`}>
+                        {state === 'earned' ? 'Preparing…' : state === 'pending' ? 'Pending' : 'Locked'}
+                      </button>
+                    )}
                   </div>
                 );
               })}
@@ -918,6 +997,7 @@ function LibraryView({
                         <a className="library-link-btn" href={item.href} download>
                           Download PDF
                         </a>
+                        <OfflineLessonButton hrefs={[item.href]} />
                       </div>
                     ) : (
                       <div className="training-resource-actions">
@@ -937,6 +1017,7 @@ function LibraryView({
                         <a className="library-link-btn" href={item.href} target="_blank" rel="noreferrer">
                           Download audio
                         </a>
+                        <OfflineLessonButton hrefs={[item.href]} />
                       </div>
                     )}
                   </div>
@@ -1506,16 +1587,105 @@ function MyTrainingView({
   );
 }
 
+function ResultsPanel({ submissions, ca }: { submissions: MySubmission[]; ca: ContinuousAssessment }) {
+  if (submissions.length === 0) {
+    return null;
+  }
+
+  const statusLabel: Record<string, string> = {
+    marked: 'Marked',
+    returned: 'Returned for changes',
+  };
+
+  return (
+    <section className="results-card">
+      <div className="results-head">
+        <div>
+          <span className="training-kicker">My results</span>
+          <h3>Marks & feedback from your lecturer</h3>
+        </div>
+        <div className="results-ca">
+          <span>Continuous assessment</span>
+          <strong>{ca.percent === null ? '—' : `${Math.round(ca.percent)}%`}</strong>
+          <small>
+            {ca.percent === null
+              ? 'Appears once your work is marked'
+              : `${ca.score} / ${ca.maxScore} marks · ${ca.assessed} of ${ca.submitted} assessed`}
+          </small>
+          {ca.percent !== null ? (
+            <div className="results-ca-track">
+              <div className="results-ca-fill" style={{ width: `${Math.min(100, ca.percent)}%` }} />
+            </div>
+          ) : null}
+        </div>
+      </div>
+
+      <div className="results-list">
+        {submissions.map((s) => {
+          const marked = s.status === 'marked' || s.status === 'returned';
+          const hasScore = marked && Number(s.max_score) > 0;
+          const pct = hasScore ? Math.round((Number(s.score) / Number(s.max_score)) * 100) : null;
+          return (
+            <article key={s.name} className={`results-item${marked ? '' : ' results-item-pending'}`}>
+              <div className="results-item-main">
+                <div className="results-item-title">
+                  <strong>{s.assignment_name || s.assignment}</strong>
+                  <span className={`results-status results-status-${marked ? s.status : 'pending'}`}>
+                    {marked ? statusLabel[s.status] : 'Awaiting marking'}
+                  </span>
+                </div>
+                {s.course ? <div className="results-course">{s.course}</div> : null}
+                {marked && s.feedback ? (
+                  <blockquote className="results-feedback">{s.feedback}</blockquote>
+                ) : !marked ? (
+                  <p className="results-waiting">Your lecturer hasn&apos;t marked this yet.</p>
+                ) : null}
+                {s.content ? (
+                  <details className="results-answer">
+                    <summary>Your answer</summary>
+                    <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(s.content) }} />
+                  </details>
+                ) : null}
+              </div>
+              <div className="results-score">
+                {hasScore ? (
+                  <>
+                    <strong>
+                      {s.score}
+                      <span>/{s.max_score}</span>
+                    </strong>
+                    <small>{pct}%{s.grade ? ` · ${s.grade}` : ''}</small>
+                  </>
+                ) : marked && s.grade ? (
+                  <strong>{s.grade}</strong>
+                ) : (
+                  <small>—</small>
+                )}
+              </div>
+            </article>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
 function AssignmentsView({
   assignments,
   isLoading,
   errorMessage,
   learnerProfile,
+  mySubmissions,
+  ca,
+  onSubmitted,
 }: {
   assignments: Assignment[];
   isLoading: boolean;
   errorMessage: string | null;
   learnerProfile: LearnerProfile;
+  mySubmissions: MySubmission[];
+  ca: ContinuousAssessment;
+  onSubmitted: () => void;
 }) {
   const [openAssignmentName, setOpenAssignmentName] = useState<string | null>(null);
   const [draftResponses, setDraftResponses] = useState<Record<string, string>>({});
@@ -1581,12 +1751,37 @@ function AssignmentsView({
           : 'done',
   }));
   const activityItems = [...submittedActivityItems, ...assignmentActivityItems].slice(0, 5);
+  const [confirmAssignment, setConfirmAssignment] = useState<string | null>(null);
+  // Uploaded voice-note answers, by assignment name.
+  const [voiceAnswers, setVoiceAnswers] = useState<Record<string, string>>({});
+  const [voiceBusy, setVoiceBusy] = useState(false);
+
+  // First step: check there is something to submit, then ask "are you sure?".
+  const requestSubmitAssignment = (assignmentName: string) => {
+    const content = draftResponses[assignmentName]?.trim() ?? '';
+    if (!stripEditorHtml(content) && !uploadedAssignments[assignmentName] && !voiceAnswers[assignmentName]) {
+      setSubmissionErrors((current) => ({
+        ...current,
+        [assignmentName]: 'Type a response, record a voice answer or upload your assignment document.',
+      }));
+      return;
+    }
+    setConfirmAssignment(assignmentName);
+  };
+
+  const confirmSubmitAssignment = async () => {
+    if (!confirmAssignment) return;
+    await handleSubmitAssignment(confirmAssignment);
+    setConfirmAssignment(null);
+  };
+
   const handleSubmitAssignment = async (assignmentName: string) => {
     const content = draftResponses[assignmentName]?.trim() ?? '';
     const upload = uploadedAssignments[assignmentName];
+    const voiceUrl = voiceAnswers[assignmentName] ?? '';
     const hasTypedResponse = Boolean(stripEditorHtml(content));
 
-    if (!hasTypedResponse && !upload) {
+    if (!hasTypedResponse && !upload && !voiceUrl) {
       setSubmissionErrors((current) => ({
         ...current,
         [assignmentName]: 'Type a response or upload your assignment document.',
@@ -1607,17 +1802,29 @@ function AssignmentsView({
       const assignment = assignments.find((a) => a.name === assignmentName);
       const submissionName = `${learnerProfile.firstName}-${assignmentName}-${new Date().toISOString().split('T')[0]}`;
 
-      await submitAssignmentSubmission({
+      const delivery = await submitAssignmentOrQueue({
         name: submissionName,
         assignmentId: assignment?.id,
         assignmentName: assignmentName,
         studentFirstName: learnerProfile.firstName,
         studentLastName: learnerProfile.lastName,
         studentEmail: learnerProfile.email,
-        content: hasTypedResponse ? content : `Uploaded assignment document: ${upload?.name}`,
-        attachment: upload?.dataUrl,
+        content: hasTypedResponse
+          ? content
+          : upload
+            ? `Uploaded assignment document: ${upload.name}`
+            : 'Voice answer — listen to the recording.',
+        // A document upload takes priority; otherwise send the voice recording.
+        attachment: upload?.dataUrl ?? (voiceUrl || undefined),
       });
+      if (delivery === 'queued') {
+        setSubmissionErrors((current) => ({
+          ...current,
+          [assignmentName]: "You're offline — your answer is saved on this device and will be sent automatically when you reconnect.",
+        }));
+      }
 
+      onSubmitted();
       setSubmittedResponses((current) => {
         const next = {
           ...current,
@@ -1706,7 +1913,8 @@ function AssignmentsView({
     const uploadedFile = uploadedAssignments[item.title];
     const savedSubmission = submittedResponses[item.title];
     const editorContent = draftResponses[item.title] ?? savedSubmission?.response ?? '';
-    const canSubmit = Boolean(stripEditorHtml(editorContent)) || Boolean(uploadedFile);
+    const canSubmit =
+      !voiceBusy && (Boolean(stripEditorHtml(editorContent)) || Boolean(uploadedFile) || Boolean(voiceAnswers[item.title]));
 
     return (
       <div className="assignment-detail-page">
@@ -1780,6 +1988,18 @@ function AssignmentsView({
           ) : null}
         </div>
 
+        <div className="assignment-upload-box">
+          <div>
+            <span className="assignment-type">Or answer by voice</span>
+            <p>Record your answer with your phone or computer microphone.</p>
+          </div>
+          <VoiceRecorder
+            value={voiceAnswers[item.title] ?? ''}
+            onBusyChange={setVoiceBusy}
+            onChange={(url) => setVoiceAnswers((current) => ({ ...current, [item.title]: url }))}
+          />
+        </div>
+
         <div className="assignment-document-editor">
           <span className="assignment-type">Type in system</span>
           <RichTextEditor
@@ -1798,10 +2018,16 @@ function AssignmentsView({
           <button
             type="button"
             className="btn-primary-top assignment-inline-btn"
-            onClick={() => handleSubmitAssignment(item.title)}
+            onClick={() => requestSubmitAssignment(item.title)}
             disabled={submittingAssignments[item.title] || !canSubmit}
           >
-            {submittingAssignments[item.title] ? 'Submitting...' : 'Submit assignment'}
+            {submittingAssignments[item.title] ? (
+              <>
+                <span className="admin-spinner admin-spinner-light" aria-hidden="true" /> Submitting…
+              </>
+            ) : (
+              'Submit assignment'
+            )}
           </button>
         </div>
         {submissionErrors[item.title] ? (
@@ -1817,8 +2043,75 @@ function AssignmentsView({
     );
   }
 
+  const confirmTarget = confirmAssignment
+    ? assignments.find((assignment) => assignment.name === confirmAssignment) ?? null
+    : null;
+  const confirmText = confirmAssignment ? htmlToText(draftResponses[confirmAssignment] ?? '') : '';
+  const confirmWords = confirmText ? confirmText.split(/\s+/).filter(Boolean).length : 0;
+  const confirmUpload = confirmAssignment ? uploadedAssignments[confirmAssignment] : undefined;
+
   return (
     <div className="assignments-view">
+      <ConfirmDialog
+        open={confirmAssignment !== null}
+        busy={confirmAssignment ? Boolean(submittingAssignments[confirmAssignment]) : false}
+        title="Submit this assignment?"
+        confirmLabel="Yes, submit"
+        cancelLabel="Keep editing"
+        onCancel={() => setConfirmAssignment(null)}
+        onConfirm={() => void confirmSubmitAssignment()}
+      >
+        <dl className="confirm-summary">
+          <div className="confirm-summary-wide">
+            <dt>Assignment</dt>
+            <dd>{confirmAssignment}</dd>
+          </div>
+          {confirmTarget?.course ? (
+            <div>
+              <dt>Course</dt>
+              <dd>{confirmTarget.course}</dd>
+            </div>
+          ) : null}
+          {confirmTarget?.submissionDate ? (
+            <div>
+              <dt>Due</dt>
+              <dd>{formatAssignmentDate(confirmTarget.submissionDate)}</dd>
+            </div>
+          ) : null}
+          <div className="confirm-summary-wide">
+            <dt>Your answer</dt>
+            <dd>
+              {confirmWords > 0 ? (
+                <>
+                  <strong>{confirmWords} word{confirmWords === 1 ? '' : 's'}</strong> ·{' '}
+                  {confirmText.length > 180 ? `${confirmText.slice(0, 180)}…` : confirmText}
+                </>
+              ) : (
+                <em>No written answer</em>
+              )}
+            </dd>
+          </div>
+          {confirmAssignment && voiceAnswers[confirmAssignment] ? (
+            <div className="confirm-summary-wide">
+              <dt>Voice answer</dt>
+              <dd>🎙️ Recording attached</dd>
+            </div>
+          ) : null}
+          <div className="confirm-summary-wide">
+            <dt>Attachment</dt>
+            <dd>
+              {confirmUpload ? (
+                `${confirmUpload.name} (${Math.max(1, Math.round(confirmUpload.size / 1024))} KB)`
+              ) : (
+                <em>No file attached</em>
+              )}
+            </dd>
+          </div>
+        </dl>
+        <p className="confirm-warn">
+          Once submitted you can&apos;t edit it. Your lecturer will mark it and your score will count towards your CA.
+        </p>
+      </ConfirmDialog>
       <section className="assignments-hero-card">
         <div className="assignments-hero-copy">
           <span className="training-kicker">Assignments</span>
@@ -1844,6 +2137,8 @@ function AssignmentsView({
           </div>
         </div>
       </section>
+
+      <ResultsPanel submissions={mySubmissions} ca={ca} />
 
       <section className="assignments-main-grid">
         <div className="assignments-board-card">
@@ -1965,7 +2260,7 @@ function CertificatesView({
   certificates,
   learnerProfile,
 }: {
-  certificates: { name: string; course: string; status: string; issuedDate: string; detail: string }[];
+  certificates: { name: string; course: string; status: string; issuedDate: string; detail: string; code?: string }[];
   learnerProfile: LearnerProfile;
 }) {
   const earnedCount = certificates.filter((c) => normalizeCertificateState(c.status) === 'earned').length;
@@ -2034,6 +2329,11 @@ function CertificatesView({
                         </span>
                       </div>
                       <p>{item.detail || 'No additional details provided.'}</p>
+                      {state === 'earned' && item.code ? (
+                        <a className="certificate-view-link" href={`#certificate/${encodeURIComponent(item.code)}`}>
+                          View &amp; print certificate →
+                        </a>
+                      ) : null}
                     </div>
                   </article>
                 );
@@ -2053,7 +2353,16 @@ function CertificatesView({
                 <h3>{latestEarned.course}</h3>
                 <p>Issued to {learnerProfile.fullName}</p>
               </div>
-              <button className="btn-primary-top certificate-download-btn">Download PDF →</button>
+              {latestEarned.code ? (
+                <a
+                  className="btn-primary-top certificate-download-btn"
+                  href={`#certificate/${encodeURIComponent(latestEarned.code)}`}
+                >
+                  View &amp; download PDF →
+                </a>
+              ) : (
+                <span className="certificate-view-pending">Your printable certificate is being prepared.</span>
+              )}
             </div>
           ) : null}
 
@@ -2084,9 +2393,8 @@ export default function Dashboard({
 }: DashboardProps) {
   const { t } = useLanguage();
   const [activeView, setActiveView] = useState<ViewKey>('dashboard');
-  const [notificationsOpen, setNotificationsOpen] = useState(false);
-  const notificationsRef = useRef<HTMLDivElement>(null);
   const { lessons } = useLessons();
+  const { submissions: mySubmissions, ca, refetch: refetchMySubmissions } = useMySubmissions();
   const {
     assignments,
     isLoading: assignmentsLoading,
@@ -2128,6 +2436,9 @@ export default function Dashboard({
     assignments: t('assignments'),
     certificates: t('certificates'),
     library: t('learningLibrary'),
+    quizzes: 'Quizzes',
+    discussions: 'Discussions',
+    journal: 'Field journal',
   };
 
   const viewDateLine: Record<ViewKey, string> = {
@@ -2141,6 +2452,9 @@ export default function Dashboard({
     assignments: `${todayLong} · 1 assignment due this week`,
     certificates: `${todayLong} · ${earnedCertificateCount} certificate${earnedCertificateCount === 1 ? '' : 's'} earned`,
     library: `${todayLong} · Bilingual module library ready`,
+    quizzes: `${todayLong} · Quick checks that count towards your CA`,
+    discussions: `${todayLong} · Ask questions, share what works`,
+    journal: `${todayLong} · Photos from your field`,
   };
 
   const viewCtaLabel: Record<ViewKey, string> = {
@@ -2150,26 +2464,14 @@ export default function Dashboard({
     assignments: t('viewAssignments'),
     certificates: t('viewCertificates'),
     library: t('openLibrary'),
+    quizzes: 'Quizzes',
+    discussions: 'Discussions',
+    journal: 'Field journal',
   };
 
   const openWhatsAppSupport = () => {
     openWhatsApp(t('whatsappMsgSupport'));
   };
-
-  useEffect(() => {
-    if (!notificationsOpen) {
-      return;
-    }
-
-    const handleClickOutside = (event: MouseEvent) => {
-      if (notificationsRef.current && !notificationsRef.current.contains(event.target as Node)) {
-        setNotificationsOpen(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [notificationsOpen]);
 
   return (
     <div className="dash-wrap">
@@ -2220,6 +2522,12 @@ export default function Dashboard({
             onClick={() => setActiveView('assignments')}
           />
           <NavItem
+            icon="quiz"
+            label="Quizzes"
+            active={activeView === 'quizzes'}
+            onClick={() => setActiveView('quizzes')}
+          />
+          <NavItem
             icon="star"
             label={t('certificates')}
             badge={myCertificates.length > 0 ? String(myCertificates.length) : undefined}
@@ -2233,6 +2541,18 @@ export default function Dashboard({
             badge={libraryBadge}
             active={activeView === 'library'}
             onClick={() => setActiveView('library')}
+          />
+          <NavItem
+            icon="chat"
+            label="Discussions"
+            active={activeView === 'discussions'}
+            onClick={() => setActiveView('discussions')}
+          />
+          <NavItem
+            icon="camera"
+            label="Field journal"
+            active={activeView === 'journal'}
+            onClick={() => setActiveView('journal')}
           />
           <NavItem icon="help" label={t('support')} onClick={openWhatsAppSupport} />
         </nav>
@@ -2255,34 +2575,7 @@ export default function Dashboard({
             <p className="date-line">{viewDateLine[activeView]}</p>
           </div>
           <div className="top-actions">
-            <div className="notification-wrap" ref={notificationsRef}>
-              <button
-                type="button"
-                className="notification-bell-btn"
-                onClick={() => setNotificationsOpen((prev) => !prev)}
-                aria-label="Notifications"
-                aria-expanded={notificationsOpen}
-              >
-                <BellIcon />
-                {announcements.length > 0 && (
-                  <span className="notification-badge">{announcements.length}</span>
-                )}
-              </button>
-              {notificationsOpen && (
-                <div className="notification-dropdown">
-                  <div className="notification-dropdown-header">Announcements</div>
-                  <div className="announce-list">
-                    {announcements.map((a, i) => (
-                      <div className={`announce-row ${a.type === 'warn' ? 'announce-warn' : 'announce-info'}`} key={i}>
-                        <div className="announce-title">{a.title}</div>
-                        <div className="announce-body">{a.body}</div>
-                        <div className="announce-date">{a.date}</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
+            <LearnerBell icon={<BellIcon />} onNavigate={(view) => setActiveView(asViewKey(view))} />
             <button className="btn-ghost-top" onClick={onLogout}>{t('logout')}</button>
             <button className="btn-ghost-top" onClick={onRequestProposal}>{t('requestProposal')}</button>
             <button
@@ -2294,8 +2587,9 @@ export default function Dashboard({
           </div>
         </div>
 
+        {activeView === 'dashboard' ? <LearnerStatusCards /> : null}
         {activeView === 'dashboard' ? (
-          <DashboardOverview liveModules={liveModules} lessons={lessons} certificates={myCertificates} />
+          <DashboardOverview liveModules={liveModules} lessons={lessons} certificates={myCertificates} ca={ca} />
         ) : null}
         {activeView === 'mycourse' ? (
           <MyCourseView
@@ -2313,12 +2607,22 @@ export default function Dashboard({
             isLoading={assignmentsLoading}
             errorMessage={assignmentsError}
             learnerProfile={learnerProfile}
+            mySubmissions={mySubmissions}
+            ca={ca}
+            onSubmitted={() => void refetchMySubmissions()}
           />
         ) : null}
         {activeView === 'certificates' ? (
           <CertificatesView certificates={myCertificates} learnerProfile={learnerProfile} />
         ) : null}
         {activeView === 'library' ? <LibraryView lessons={lessons} /> : null}
+        {activeView === 'quizzes' ? <LearnerQuizzes onScored={() => void refetchMySubmissions()} /> : null}
+        {activeView === 'discussions' ? (
+          <ToastProvider>
+            <Discussions actor="learner" myEmail={learnerProfile.email} />
+          </ToastProvider>
+        ) : null}
+        {activeView === 'journal' ? <FieldJournal /> : null}
       </main>
     </div>
   );
@@ -2354,6 +2658,9 @@ function NavIcon({ name }: { name: string }) {
     clock: <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 2"/></svg>,
     star: <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M8 1l1.8 3.6L14 5.3l-3 2.9.7 4.1L8 10.5l-3.7 1.8.7-4.1-3-2.9 4.2-.7z"/></svg>,
     file: <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="1" width="10" height="14" rx="1"/><path d="M6 5h4M6 8h4M6 11h2"/></svg>,
+    quiz: <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="2" y="1.5" width="12" height="13" rx="1.5"/><path d="M5 5.5l1 1 2-2M5 10l1 1 2-2M10 6h1.5M10 10.5h1.5"/></svg>,
+    chat: <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M14 10a1.5 1.5 0 01-1.5 1.5H5L2 14V3.5A1.5 1.5 0 013.5 2h9A1.5 1.5 0 0114 3.5z"/></svg>,
+    camera: <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M2 5h2.5L6 3h4l1.5 2H14v8H2z"/><circle cx="8" cy="9" r="2.5"/></svg>,
     help: <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="8" cy="8" r="6"/><path d="M6.5 6a1.5 1.5 0 013 .5c0 1-1.5 1.5-1.5 2.5M8 12h.01"/></svg>,
   };
   return icons[name] || null;

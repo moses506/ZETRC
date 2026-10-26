@@ -1,3 +1,5 @@
+import { getStoredLearnerToken, getStoredStaffToken, type StaffScope } from './auth';
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://139.84.247.238';
 const API_PUBLIC_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://139.84.247.238';
 type ApiRecord = Record<string, unknown>;
@@ -46,6 +48,8 @@ export type Certificate = {
   status: string;
   issuedDate: string;
   detail: string;
+  /** Verification code for earned certificates (printed with a QR code). */
+  code: string;
 };
 
 export type EnrollmentPayload = {
@@ -380,6 +384,7 @@ function toCertificate(record: ApiRecord): Certificate | null {
     status: typeof record.status === 'string' ? record.status.trim() : '',
     issuedDate: typeof record.issued_date === 'string' ? record.issued_date.trim() : '',
     detail: typeof record.detail === 'string' ? stripHtml(record.detail) : '',
+    code: typeof record.code === 'string' ? record.code.trim() : '',
   };
 }
 
@@ -453,12 +458,12 @@ async function request<TResponse>(path: string, init: RequestInit): Promise<TRes
     headers['Content-Type'] = headers['Content-Type'] ?? 'application/json';
   }
 
-  console.log('API request', {
-    url: `${API_BASE_URL}${path}`,
-    method: init.method ?? 'GET',
-    headers,
-    body: init.body ?? null,
-  });
+  // Learner pages call /api and /portal: send the learner's login automatically
+  // so the server can return their own data (staff calls pass their own token).
+  if (!headers.Authorization && (path.startsWith('/api/') || path.startsWith('/portal/'))) {
+    const learnerToken = getStoredLearnerToken();
+    if (learnerToken) headers.Authorization = `Bearer ${learnerToken}`;
+  }
 
   try {
     response = await fetch(`${API_BASE_URL}${path}`, {
@@ -640,9 +645,11 @@ export async function uploadDocument(file: File): Promise<UploadedDocument> {
 
   let response: Response;
   try {
+    const learnerToken = getStoredLearnerToken();
     response = await fetch(`${API_BASE_URL}/api/upload-file/`, {
       method: 'POST',
       body: formData,
+      headers: learnerToken ? { Authorization: `Bearer ${learnerToken}` } : undefined,
     });
   } catch {
     throw new Error('Unable to reach the server right now. Please check the backend connection and try again.');
@@ -689,7 +696,8 @@ export async function submitAssignmentSubmission(
     },
     body: JSON.stringify({
       name: payload.name,
-      assignment: payload.assignmentId,
+      // Assignments are keyed by their record name; fall back to it when no id exists.
+      assignment: payload.assignmentId ?? payload.assignmentName,
       assignment_name: payload.assignmentName,
       student_first_name: payload.studentFirstName,
       student_last_name: payload.studentLastName,
@@ -699,3 +707,286 @@ export async function submitAssignmentSubmission(
     }),
   });
 }
+
+export async function authenticateAdmin(payload: LearnerLoginPayload): Promise<unknown> {
+  return request('/portal/authenticate-admin', {
+    method: 'POST',
+    body: JSON.stringify({
+      email: payload.email,
+      password: payload.password,
+    }),
+  });
+}
+
+export async function authenticateLecturer(payload: LearnerLoginPayload): Promise<unknown> {
+  return request('/portal/authenticate-lecturer', {
+    method: 'POST',
+    body: JSON.stringify({
+      email: payload.email,
+      password: payload.password,
+    }),
+  });
+}
+
+function staffAuthHeaders(scope: StaffScope): Record<string, string> {
+  const token = getStoredStaffToken(scope);
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+// Generic record CRUD for a staff area: /admin/api/* or /lecturer/api/*.
+export async function fetchStaffRecords<T = ApiRecord>(
+  scope: StaffScope,
+  model: string,
+  filters?: Record<string, unknown>,
+): Promise<T[]> {
+  const headers: Record<string, string> = { model, ...staffAuthHeaders(scope) };
+  if (filters) {
+    headers.filters = JSON.stringify(filters);
+  }
+
+  const payload = await request<unknown>(`/${scope}/api/get-data/?model=${encodeURIComponent(model)}`, {
+    method: 'GET',
+    headers,
+  });
+
+  return extractRows(payload).filter(isRecord) as T[];
+}
+
+export async function createStaffRecord(scope: StaffScope, model: string, body: ApiRecord): Promise<unknown> {
+  return request(`/${scope}/api/post-data/`, {
+    method: 'POST',
+    headers: { Model: model, ...staffAuthHeaders(scope) },
+    body: JSON.stringify(body),
+  });
+}
+
+export async function updateStaffRecord(scope: StaffScope, model: string, body: ApiRecord): Promise<unknown> {
+  return request(`/${scope}/api/patch-data/`, {
+    method: 'PATCH',
+    headers: { Model: model, ...staffAuthHeaders(scope) },
+    body: JSON.stringify(body),
+  });
+}
+
+export async function deleteStaffRecord(scope: StaffScope, model: string, name: string): Promise<unknown> {
+  return request(`/${scope}/api/delete-doc/`, {
+    method: 'DELETE',
+    headers: { Model: model, ...staffAuthHeaders(scope) },
+    body: JSON.stringify({ name }),
+  });
+}
+
+export const fetchAdminRecords = <T = ApiRecord>(model: string, filters?: Record<string, unknown>) =>
+  fetchStaffRecords<T>('admin', model, filters);
+export const createAdminRecord = (model: string, body: ApiRecord) => createStaffRecord('admin', model, body);
+export const updateAdminRecord = (model: string, body: ApiRecord) => updateStaffRecord('admin', model, body);
+export const deleteAdminRecord = (model: string, name: string) => deleteStaffRecord('admin', model, name);
+
+// ---- Staff file uploads (lesson PDFs, audio) ----
+
+export type UploadedFile = { name: string; url: string; size: number };
+
+/** Uploads one file to /{scope}/api/upload-file/, reporting progress (0–100). */
+export function uploadStaffFile(
+  scope: StaffScope,
+  file: File,
+  onProgress?: (percent: number) => void,
+): Promise<UploadedFile> {
+  return uploadWithProgress(`/${scope}/api/upload-file/`, getStoredStaffToken(scope), file, onProgress);
+}
+
+/** Uploads a file as the signed-in learner (voice notes, field photos, documents). */
+export function uploadLearnerFile(file: File, onProgress?: (percent: number) => void): Promise<UploadedFile> {
+  return uploadWithProgress('/api/upload-file/', getStoredLearnerToken(), file, onProgress);
+}
+
+function uploadWithProgress(
+  path: string,
+  token: string | null,
+  file: File,
+  onProgress?: (percent: number) => void,
+): Promise<UploadedFile> {
+  return new Promise((resolve, reject) => {
+    const form = new FormData();
+    form.append('file', file);
+
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', `${API_BASE_URL}${path}`);
+    if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+
+    xhr.upload.onprogress = (event) => {
+      if (event.lengthComputable && onProgress) onProgress(Math.round((event.loaded / event.total) * 100));
+    };
+    xhr.onerror = () =>
+      reject(new Error('Unable to reach the server right now. Please check the backend connection and try again.'));
+    xhr.onload = () => {
+      let payload: unknown = null;
+      try {
+        payload = xhr.responseText ? JSON.parse(xhr.responseText) : null;
+      } catch {
+        payload = xhr.responseText;
+      }
+      if (xhr.status < 200 || xhr.status >= 300) {
+        reject(new Error(pickMessage(payload) ?? `Upload failed (status ${xhr.status}).`));
+        return;
+      }
+      const first = extractRows(payload)[0];
+      if (!isRecord(first) || typeof first.url !== 'string') {
+        reject(new Error('The server accepted the file but returned an unexpected response.'));
+        return;
+      }
+      resolve({
+        name: typeof first.name === 'string' ? first.name : file.name,
+        url: first.url,
+        size: typeof first.size === 'number' ? first.size : file.size,
+      });
+    };
+    xhr.send(form);
+  });
+}
+
+// ---- Learner's own submissions (marks & feedback) ----
+
+export type MySubmission = {
+  name: string;
+  assignment: string;
+  assignment_name: string;
+  course: string;
+  content: string;
+  status: string;
+  grade: string;
+  score: number;
+  max_score: number;
+  feedback: string;
+  creation: string;
+  modified: string;
+};
+
+export async function fetchMySubmissions(): Promise<MySubmission[]> {
+  const token = getStoredLearnerToken();
+  if (!token) return [];
+  const payload = await request<unknown>(`/portal/my-submissions?_=${Date.now()}`, {
+    method: 'GET',
+    cache: 'no-store',
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return extractRows(payload).filter(isRecord) as unknown as MySubmission[];
+}
+
+// ---- Learner progress ----
+
+export type LessonProgressUpdate = {
+  key: string;
+  module: string;
+  percent: number;
+  completed: boolean;
+};
+
+/** Sends a learner's lesson progress to the server (learner session). */
+export async function recordLessonProgress(update: LessonProgressUpdate): Promise<void> {
+  const token = getStoredLearnerToken();
+  if (!token) return;
+  await request('/portal/lesson-progress', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify(update),
+  });
+}
+
+export type ProgressRow = {
+  learner_email: string;
+  key: string;
+  module: string;
+  course: string;
+  percent: number;
+  completed: boolean;
+  modified: string;
+};
+
+export type ProgressLogRow = {
+  learner_email: string;
+  key: string;
+  course: string;
+  percent: number;
+  creation: string;
+};
+
+export type ProgressReport = {
+  courses: { name: string; lecturer?: string }[];
+  lessons_per_course: Record<string, number>;
+  enrollments: { first_name: string; last_name: string; email: string; course: string; creation: string }[];
+  progress: ProgressRow[];
+  logs: ProgressLogRow[];
+};
+
+/** Progress report for the admin console or the lecturer portal (scoped server-side). */
+export async function fetchProgressReport(scope: StaffScope): Promise<ProgressReport> {
+  const payload = await request<unknown>(`/${scope}/api/progress?_=${Date.now()}`, {
+    method: 'GET',
+    cache: 'no-store',
+    headers: staffAuthHeaders(scope),
+  });
+  const data = (isRecord(payload) && isRecord(payload.data) ? payload.data : payload) as Partial<ProgressReport>;
+  return {
+    courses: data.courses ?? [],
+    lessons_per_course: data.lessons_per_course ?? {},
+    enrollments: data.enrollments ?? [],
+    progress: data.progress ?? [],
+    logs: data.logs ?? [],
+  };
+}
+
+// ---- Admin user management (/admin/api/users) ----
+
+export type UserRole = 'Admin' | 'Lecturer' | 'Learner';
+
+export type PortalUser = {
+  id: number;
+  first_name: string;
+  last_name: string;
+  email: string;
+  contact_no: string;
+  role: UserRole;
+  active: boolean;
+  email_verified: boolean;
+  creation: string;
+};
+
+export type PortalUserInput = Partial<Omit<PortalUser, 'id' | 'creation' | 'email_verified'>> & {
+  password?: string;
+};
+
+export async function fetchUsers(role?: UserRole): Promise<PortalUser[]> {
+  const query = role ? `?role=${encodeURIComponent(role)}` : '';
+  const payload = await request<unknown>(`/admin/api/users${query}`, {
+    method: 'GET',
+    headers: staffAuthHeaders('admin'),
+  });
+  return extractRows(payload).filter(isRecord) as unknown as PortalUser[];
+}
+
+export async function createUser(body: PortalUserInput): Promise<unknown> {
+  return request('/admin/api/users', {
+    method: 'POST',
+    headers: staffAuthHeaders('admin'),
+    body: JSON.stringify(body),
+  });
+}
+
+export async function updateUser(id: number, body: PortalUserInput): Promise<unknown> {
+  return request(`/admin/api/users/${id}`, {
+    method: 'PATCH',
+    headers: staffAuthHeaders('admin'),
+    body: JSON.stringify(body),
+  });
+}
+
+export async function deleteUser(id: number): Promise<unknown> {
+  return request(`/admin/api/users/${id}`, {
+    method: 'DELETE',
+    headers: staffAuthHeaders('admin'),
+  });
+}
+
+// Shared helpers for feature modules.
+export { request as apiRequest, extractRows, isRecord, staffAuthHeaders };
